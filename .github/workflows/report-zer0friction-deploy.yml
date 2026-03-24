@@ -1,0 +1,72 @@
+name: Report Deploy To Zer0Friction
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: Service name to show in Zer0Friction
+        required: false
+        type: string
+      environment:
+        description: Deployment environment
+        required: false
+        default: production
+        type: string
+  push:
+    branches:
+      - main
+
+jobs:
+  report-deploy:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.ZER0FRICTION_BACKEND_URL != '' && secrets.ZER0FRICTION_API_KEY != '' && secrets.ZER0FRICTION_PROJECT_SLUG != '' }}
+    steps:
+      - name: Build Zer0Friction deploy payload
+        id: payload
+        env:
+          SERVICE_NAME: ${{ inputs.service_name || vars.ZER0FRICTION_SERVICE_NAME || github.event.repository.name }}
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment || vars.ZER0FRICTION_ENVIRONMENT || 'production' }}
+        run: |
+          payload=$(jq -n \
+            --arg provider "GITHUB" \
+            --arg projectSlug "${{ secrets.ZER0FRICTION_PROJECT_SLUG }}" \
+            --arg type "DEPLOY" \
+            --arg repository "${{ github.repository }}" \
+            --arg branch "${{ github.ref_name }}" \
+            --arg commitSha "${{ github.sha }}" \
+            --arg version "${{ github.sha }}" \
+            --arg externalId "${{ github.run_id }}" \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg environment "$DEPLOY_ENVIRONMENT" \
+            --arg title "GitHub deploy for $SERVICE_NAME" \
+            --arg happenedAt "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+            '{
+              provider: $provider,
+              projectSlug: $projectSlug,
+              type: $type,
+              repository: $repository,
+              branch: $branch,
+              commitSha: $commitSha,
+              version: $version,
+              externalId: $externalId,
+              serviceName: $serviceName,
+              environment: $environment,
+              title: $title,
+              happenedAt: $happenedAt
+            }')
+
+          echo "payload<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$payload" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Send deploy event to Zer0Friction
+        env:
+          BACKEND_URL: ${{ secrets.ZER0FRICTION_BACKEND_URL }}
+          API_KEY: ${{ secrets.ZER0FRICTION_API_KEY }}
+          PAYLOAD: ${{ steps.payload.outputs.payload }}
+        run: |
+          curl --fail-with-body \
+            -X POST "$BACKEND_URL/api/v1/changes/ingest/deploy" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $API_KEY" \
+            -d "$PAYLOAD"

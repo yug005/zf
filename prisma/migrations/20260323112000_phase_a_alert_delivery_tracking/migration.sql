@@ -1,0 +1,6 @@
+ALTER TABLE "alerts"
+ADD COLUMN IF NOT EXISTS "delivery_attempts" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS "last_delivery_attempt_at" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "last_delivered_at" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "last_suppressed_at" TIMESTAMP(3),
+ADD COLUMN IF NOT EXISTS "delivery_error" TEXT;

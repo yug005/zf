@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # The Core Database executing persistent schemas
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yugYUG123
+      POSTGRES_DB: zer0friction
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zer0friction"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # In-memory Redis store powering the BullMQ background processors
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --save 60 1 --loglevel warning
+
+  # NestJS API Layer processing logic and queue orchestrations
+  backend:
+    build: 
+      context: .
+      dockerfile: backend.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Internal Docker Network routing
+      - DATABASE_URL=postgresql://postgres:yugYUG123@postgres:5432/zer0friction?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_ACCESS_SECRET=long_secure_string_production_access
+      - JWT_REFRESH_SECRET=long_secure_string_production_refresh
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # React Output mapping internally directly avoiding explicit separate deployments
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,363 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  password           String
+  name               String?
+  avatarUrl          String?            @map("avatar_url")
+  isActive           Boolean            @default(true) @map("is_active")
+  isVerified         Boolean            @default(false) @map("is_verified")
+  sessionVersion     Int                @default(0) @map("session_version")
+  refreshTokenHash   String?            @map("refresh_token_hash")
+  resetTokenHash     String?            @map("reset_token_hash")
+  resetTokenExpires  DateTime?          @map("reset_token_expires")
+  verificationTokenHash String?         @map("verification_token_hash")
+  googleId           String?            @unique @map("google_id")
+  githubId           String?            @unique @map("github_id")
+  trialStartAt       DateTime           @map("trial_start_at")
+  trialEndAt         DateTime           @map("trial_end_at")
+  subscriptionPlan   SubscriptionPlan   @default(TRIAL) @map("subscription_plan")
+  razorpayCustomerId String?            @map("razorpay_customer_id")
+  subscriptionId     String?            @map("subscription_id")
+  subscriptionStatus SubscriptionStatus @default(TRIALING) @map("subscription_status")
+  monitorLimit       Int                @default(5) @map("monitor_limit")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  apiKeys            ApiKey[]
+  projects           Project[]
+  subscriptionReminders SubscriptionReminder[]
+  inAppNotifications InAppNotification[]
+  statusPages        StatusPage[]
+
+  @@map("users")
+}
+
+model ApiKey {
+  id        String    @id @default(uuid())
+  name      String
+  prefix    String
+  keyHash   String    @map("key_hash")
+  userId    String    @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([prefix])
+  @@map("api_keys")
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  userId      String    @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  monitors    Monitor[]
+  changeEvents ChangeEvent[]
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model Monitor {
+  id                  String        @id @default(uuid())
+  name                String
+  url                 String
+  type                MonitorType   @default(HTTP)
+  serviceName         String?       @map("service_name")
+  featureName         String?       @map("feature_name")
+  customerJourney     String?       @map("customer_journey")
+  teamOwner           String?       @map("team_owner")
+  region              String?
+  businessCriticality BusinessCriticality @default(MEDIUM) @map("business_criticality")
+  slaTier             SlaTier       @default(STANDARD) @map("sla_tier")
+  httpMethod          HttpMethod    @default(GET) @map("http_method")
+  intervalSeconds     Int           @default(60) @map("interval_seconds")
+  timeoutMs           Int           @default(30000) @map("timeout_ms")
+  expectedStatus      Int?          @map("expected_status")
+  status              MonitorStatus @default(PAUSED)
+  isActive            Boolean       @default(true) @map("is_active")
+  pausedByBilling     Boolean       @default(false) @map("paused_by_billing")
+  headers             Json?
+  body                Json?
+  retries             Int           @default(0)
+  consecutiveFailures Int           @default(0) @map("consecutive_failures")
+  failureThreshold    Int           @default(3) @map("failure_threshold")
+  projectId           String        @map("project_id")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  lastCheckedAt       DateTime?     @map("last_checked_at")
+  alerts              Alert[]
+  checkResults        CheckResult[]
+  project             Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  statusPages         StatusPageMonitor[]
+  incidents           Incident[]
+  changeEvents        ChangeEvent[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([isActive, status])
+  @@map("monitors")
+}
+
+model CheckResult {
+  id             String      @id @default(uuid())
+  status         CheckStatus
+  statusCode     Int?        @map("status_code")
+  responseTimeMs Int?        @map("response_time_ms")
+  errorMessage   String?     @map("error_message")
+  headers        Json?
+  body           String?
+  monitorId      String      @map("monitor_id")
+  checkedAt      DateTime    @default(now()) @map("checked_at")
+  monitor        Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, checkedAt])
+  @@map("check_results")
+}
+
+model Alert {
+  id             String       @id @default(uuid())
+  channel        AlertChannel
+  status         AlertStatus  @default(TRIGGERED)
+  message        String
+  metadata       Json?
+  deliveryAttempts Int        @default(0) @map("delivery_attempts")
+  lastDeliveryAttemptAt DateTime? @map("last_delivery_attempt_at")
+  lastDeliveredAt  DateTime?  @map("last_delivered_at")
+  lastSuppressedAt DateTime?  @map("last_suppressed_at")
+  deliveryError   String?     @map("delivery_error")
+  acknowledgedAt DateTime?    @map("acknowledged_at")
+  resolvedAt     DateTime?    @map("resolved_at")
+  monitorId      String       @map("monitor_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  monitor        Monitor      @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId])
+  @@index([status])
+  @@map("alerts")
+}
+
+model WebhookEventLog {
+  id             String   @id @default(uuid())
+  provider       String
+  eventType      String   @map("event_type")
+  externalId     String?  @map("external_id")
+  payload        Json
+  signatureValid Boolean  @default(false) @map("signature_valid")
+  processed      Boolean  @default(false)
+  processedAt    DateTime? @map("processed_at")
+  errorMessage   String?  @map("error_message")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([provider, eventType])
+  @@index([externalId])
+  @@map("webhook_event_logs")
+}
+
+model SubscriptionReminder {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  remindAt    DateTime @map("remind_at")
+  daysBefore  Int      @map("days_before") // 7, 3, or 1
+  sentAt      DateTime @default(now()) @map("sent_at")
+  channel     String   @default("EMAIL") // EMAIL or IN_APP
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, remindAt])
+  @@map("subscription_reminders")
+}
+
+model InAppNotification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   // TRIAL_EXPIRING, TRIAL_EXPIRED, MONITOR_LIMIT_REACHED, UPGRADE_REQUIRED
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@map("in_app_notifications")
+}
+
+model StatusPage {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String              @unique
+  monitors  StatusPageMonitor[]
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("status_pages")
+}
+
+model StatusPageMonitor {
+  statusPageId String     @map("status_page_id")
+  monitorId    String     @map("monitor_id")
+  statusPage   StatusPage @relation(fields: [statusPageId], references: [id], onDelete: Cascade)
+  monitor      Monitor    @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@id([statusPageId, monitorId])
+  @@map("status_page_monitors")
+}
+
+model Incident {
+  id          String         @id @default(uuid())
+  monitorId   String         @map("monitor_id")
+  status      IncidentStatus @default(INVESTIGATING)
+  message     String
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  monitor     Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId])
+  @@index([status])
+  @@map("incidents")
+}
+
+model ChangeEvent {
+  id          String           @id @default(uuid())
+  type        ChangeEventType
+  source      ChangeEventSource @default(MANUAL)
+  externalId  String?          @map("external_id")
+  title       String
+  summary     String?
+  serviceName String?          @map("service_name")
+  environment String?
+  version     String?
+  metadata    Json?
+  happenedAt  DateTime         @map("happened_at")
+  watchUntil  DateTime?        @map("watch_until")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  projectId   String           @map("project_id")
+  monitorId   String?          @map("monitor_id")
+
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  monitor     Monitor?         @relation(fields: [monitorId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, happenedAt])
+  @@index([monitorId, happenedAt])
+  @@index([type, source])
+  @@unique([projectId, source, externalId])
+  @@map("change_events")
+}
+
+enum IncidentStatus {
+  INVESTIGATING
+  IDENTIFIED
+  RESOLVED
+}
+
+enum MonitorType {
+  HTTP
+  TCP
+  PING
+  DNS
+  SSL
+}
+
+enum MonitorStatus {
+  UP
+  DOWN
+  DEGRADED
+  PAUSED
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+  HEAD
+  OPTIONS
+}
+
+enum AlertChannel {
+  EMAIL
+  SLACK
+  WEBHOOK
+  SMS
+}
+
+enum AlertStatus {
+  TRIGGERED
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum CheckStatus {
+  SUCCESS
+  FAILURE
+  TIMEOUT
+  ERROR
+}
+
+enum SubscriptionPlan {
+  TRIAL
+  LITE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum BusinessCriticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SlaTier {
+  STANDARD
+  PREMIUM
+  ENTERPRISE
+}
+
+enum ChangeEventType {
+  DEPLOY
+  CONFIG
+  DNS
+  FEATURE_FLAG
+  SSL
+  SECRET
+  INFRASTRUCTURE
+  RELEASE
+  MANUAL
+}
+
+enum ChangeEventSource {
+  MANUAL
+  API
+  GITHUB
+  VERCEL
+  RAILWAY
+  SYSTEM
+}

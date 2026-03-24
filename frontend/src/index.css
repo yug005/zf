@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 antialiased;
+  }
+}
+
+@layer components {
+  .auth-input {
+    @apply block w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 caret-slate-900 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all;
+  }
+
+  .auth-input:hover {
+    @apply border-slate-400;
+  }
+
+  .dark .auth-input {
+    @apply border-slate-700 bg-slate-900 text-slate-100 caret-slate-100 placeholder:text-slate-400;
+  }
+
+  .dark .auth-input:hover {
+    @apply border-slate-600;
+  }
+
+  .auth-input:-webkit-autofill,
+  .auth-input:-webkit-autofill:hover,
+  .auth-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(15 23 42);
+    -webkit-box-shadow: 0 0 0 1000px rgb(255 255 255) inset;
+    caret-color: rgb(15 23 42);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  .dark .auth-input:-webkit-autofill,
+  .dark .auth-input:-webkit-autofill:hover,
+  .dark .auth-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(241 245 249);
+    -webkit-box-shadow: 0 0 0 1000px rgb(15 23 42) inset;
+    caret-color: rgb(241 245 249);
+  }
+}
