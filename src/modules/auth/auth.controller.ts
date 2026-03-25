@@ -14,6 +14,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
+import { Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -28,6 +29,8 @@ const REFRESH_COOKIE = 'zf_refresh_token';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -161,15 +164,7 @@ export class AuthController {
   }
 
   private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
-    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
-    const cookieDomain = this.configService.get<string>('COOKIE_DOMAIN') || undefined;
-    const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax' as const,
-      domain: cookieDomain,
-      path: '/',
-    };
+    const cookieOptions = this.getCookieOptions();
 
     res.cookie(ACCESS_COOKIE, accessToken, {
       ...cookieOptions,
@@ -188,23 +183,75 @@ export class AuthController {
   }
 
   private clearAuthCookies(res: Response): void {
-    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
-    const cookieDomain = this.configService.get<string>('COOKIE_DOMAIN') || undefined;
+    const cookieOptions = this.getCookieOptions();
 
     res.clearCookie(ACCESS_COOKIE, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      domain: cookieDomain,
-      path: '/',
+      ...cookieOptions,
     });
     res.clearCookie(REFRESH_COOKIE, {
+      ...cookieOptions,
+    });
+  }
+
+  private getCookieOptions() {
+    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const cookieDomain = this.normalizeCookieDomain(
+      this.configService.get<string>('COOKIE_DOMAIN') || '',
+    );
+    const sameSite: 'none' | 'lax' = isProduction ? 'none' : 'lax';
+
+    return {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      // Vercel frontend -> Render API is cross-site in production, so auth cookies must opt in.
+      sameSite,
       domain: cookieDomain,
       path: '/',
-    });
+    };
+  }
+
+  private normalizeCookieDomain(rawDomain: string): string | undefined {
+    const trimmed = rawDomain.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    let normalized = trimmed;
+    try {
+      if (trimmed.includes('://')) {
+        normalized = new URL(trimmed).hostname;
+      }
+    } catch {
+      this.logger.warn(`Ignoring invalid COOKIE_DOMAIN value: ${JSON.stringify(trimmed)}`);
+      return undefined;
+    }
+
+    normalized = normalized
+      .replace(/:\d+$/, '')
+      .replace(/\/.*$/, '')
+      .replace(/^\.+/, '');
+
+    const backendHost = this.safeHostname(this.configService.get<string>('BACKEND_URL'));
+    if (backendHost && normalized !== backendHost && !backendHost.endsWith(`.${normalized}`)) {
+      this.logger.warn(
+        `Ignoring COOKIE_DOMAIN=${JSON.stringify(trimmed)} because it does not match BACKEND_URL host ${JSON.stringify(backendHost)}.`,
+      );
+      return undefined;
+    }
+
+    return normalized || undefined;
+  }
+
+  private safeHostname(url?: string): string | undefined {
+    if (!url) {
+      return undefined;
+    }
+
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return undefined;
+    }
   }
 
   private parseDurationToMs(duration: string, fallbackMs: number): number {
