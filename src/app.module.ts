@@ -47,11 +47,15 @@ import { StatusPagesModule } from './status-pages/status-pages.module';
       useFactory: (configService: ConfigService) => {
         const redisUrl = configService.getOrThrow<string>('REDIS_URL');
         const url = new URL(redisUrl);
+        const isTls = url.protocol === 'rediss:';
+
         return {
           connection: {
             host: url.hostname,
             port: Number(url.port) || 6379,
+            username: url.username || undefined,
             password: url.password || undefined,
+            tls: isTls ? {} : undefined,
           },
         };
       },
