@@ -19,11 +19,18 @@ export default function DashboardLayout() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading: isUserLoading, isError: isUserError } = useQuery({
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,
     staleTime: 60_000,
+    retry: false,
   });
+
+  useEffect(() => {
+    if (!isUserLoading && (isUserError || !currentUser)) {
+      navigate('/login');
+    }
+  }, [currentUser, isUserLoading, isUserError, navigate]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -44,7 +51,24 @@ export default function DashboardLayout() {
     { title: 'API Keys', path: '/api-keys', icon: Key },
   ];
 
-  if (!currentUser?.isAdmin) {
+  if (isUserLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#080c14]">
+        <div className="text-center">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-xl"
+          />
+          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Checking Session</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) return null;
+
+  if (!currentUser.isAdmin) {
     menu.splice(3, 0, { title: 'Billing', path: '/billing', icon: CreditCard });
   }
 
