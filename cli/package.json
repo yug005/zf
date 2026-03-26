@@ -1,14 +1,22 @@
 {
   "name": "@zer0friction/cli",
   "version": "0.1.0",
-  "private": true,
   "description": "Terminal interface for Zer0Friction",
+  "license": "UNLICENSED",
   "type": "module",
+  "files": [
+    "bin",
+    "dist"
+  ],
   "bin": {
-    "zf": "./dist/index.js"
+    "zf": "./bin/zf.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   },
   "scripts": {
     "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepack": "npm run build"
   }
 }

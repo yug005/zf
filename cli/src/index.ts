@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import {
   getConfigPath,
   loadConfig,
@@ -6,6 +7,7 @@ import {
   saveConfig,
   type CliConfig,
 } from './config.js';
+import { isSupportedShell, renderCompletion, renderInstallHint } from './completion.js';
 import { detectGitSnapshot } from './git.js';
 import {
   formatDate,
@@ -67,6 +69,9 @@ async function main(): Promise<void> {
       return;
     case 'deploy':
       await handleDeploy(client, config, action, parsed.options);
+      return;
+    case 'completion':
+      await handleCompletion(action);
       return;
     default:
       throw new Error(`Unknown command group: ${group}. Run \`zf help\` for usage.`);
@@ -667,6 +672,15 @@ async function handleDeploy(
   ]);
 }
 
+async function handleCompletion(action: string | undefined): Promise<void> {
+  const shell = action || 'bash';
+  if (!isSupportedShell(shell)) {
+    throw new Error('Usage: zf completion <bash|zsh|fish|powershell>');
+  }
+  console.log(renderCompletion(shell));
+  console.error(renderInstallHint(shell));
+}
+
 function printHelp(): void {
   printBanner('Command reference', 'A fast CLI for the monitor workflows you repeat most.');
   console.log(`Usage:
@@ -679,6 +693,7 @@ function printHelp(): void {
   zf api-keys list|create|revoke
   zf monitors list|get|checks|create|update|pause|resume|delete
   zf deploy report
+  zf completion <bash|zsh|fish|powershell>
 
 Examples:
   zf init
@@ -687,6 +702,7 @@ Examples:
   zf monitors checks --id <monitor-id> --limit 20
   zf api-keys create --name "GitHub Actions"
   zf deploy report --environment production --service api
+  zf completion powershell
 
 Global config:
   Stored at ~/.zer0friction/config.json

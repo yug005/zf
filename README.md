@@ -72,6 +72,46 @@ npm run infra:up       # start postgres + redis
 npm run infra:down     # stop docker services
 ```
 
+## CLI
+
+Zer0Friction also ships with a terminal CLI from [`cli`](E:/zer0Friction/cli).
+
+Build it:
+
+```powershell
+npm run cli:build
+```
+
+Run it from the repo:
+
+```powershell
+node cli/dist/index.js help
+node cli/dist/index.js init
+node cli/dist/index.js monitors list
+```
+
+Install it globally on your machine with npm link:
+
+```powershell
+npm run cli:link
+zf help
+```
+
+Create a tarball package:
+
+```powershell
+npm run cli:pack
+```
+
+Shell completions:
+
+```powershell
+zf completion powershell | Out-String | Add-Content $PROFILE
+zf completion bash >> ~/.bashrc
+zf completion zsh >> ~/.zshrc
+zf completion fish > ~/.config/fish/completions/zf.fish
+```
+
 ## GitHub Deploy Automation
 
 Zer0Friction can automatically record deploy changes so you do not need to fill the `Changes` page manually.
