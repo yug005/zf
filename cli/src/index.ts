@@ -33,6 +33,13 @@ type ParsedArgs = {
 };
 
 type ConfigActionKey = 'base-url' | 'api-key' | 'project-id';
+type MonitorMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+type MonitorType = 'HTTP' | 'TCP' | 'PING' | 'DNS' | 'SSL';
+
+const MONITOR_TYPES: MonitorType[] = ['HTTP', 'TCP', 'PING', 'DNS', 'SSL'];
+const HTTP_METHODS: MonitorMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+const BUSINESS_CRITICALITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+const SLA_TIERS = ['STANDARD', 'PREMIUM', 'ENTERPRISE'] as const;
 
 async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
@@ -556,42 +563,9 @@ async function handleMonitors(
       return;
     }
     case 'create': {
-      const projectId =
-        getStringOption(options, 'project-id') ||
-        resolveProjectId(config) ||
-        (getBooleanOption(options, 'interactive')
-          ? await promptText({ label: 'Project ID', required: true })
-          : undefined);
-      assertValue(projectId, 'project ID');
-
-      const payload: Record<string, unknown> = {
-        projectId,
-        name: getRequiredOption(options, 'name'),
-        url: getRequiredOption(options, 'url'),
-        type: getStringOption(options, 'type') || 'HTTP',
-        httpMethod: getStringOption(options, 'method') || 'GET',
-      };
-
-      assignOptionalNumber(payload, options, 'interval', 'intervalSeconds');
-      assignOptionalNumber(payload, options, 'timeout', 'timeoutMs');
-      assignOptionalNumber(payload, options, 'expected-status', 'expectedStatus');
-      assignOptionalNumber(payload, options, 'retries', 'retries');
-      assignOptionalString(payload, options, 'service', 'serviceName');
-      assignOptionalString(payload, options, 'feature', 'featureName');
-      assignOptionalString(payload, options, 'journey', 'customerJourney');
-      assignOptionalString(payload, options, 'owner', 'teamOwner');
-      assignOptionalString(payload, options, 'region', 'region');
-      assignOptionalString(payload, options, 'business-criticality', 'businessCriticality');
-      assignOptionalString(payload, options, 'sla-tier', 'slaTier');
-
-      const headers = parseJsonOption<Record<string, string>>(options, 'headers');
-      const body = parseJsonOption<unknown>(options, 'body');
-      if (headers) {
-        payload.headers = headers;
-      }
-      if (body !== undefined) {
-        payload.body = body;
-      }
+      const payload = getBooleanOption(options, 'interactive')
+        ? await buildInteractiveMonitorPayload(client, config, options)
+        : buildMonitorPayload(config, options);
 
       const monitor = await client.createMonitor(payload);
       if (hasJsonFlag(options)) {
@@ -820,6 +794,7 @@ Examples:
   zf doctor
   zf projects use --slug production
   zf monitors list
+  zf monitors create --interactive
   zf monitors checks --id <monitor-id> --limit 20
   zf api-keys create --name "GitHub Actions"
   zf deploy report --environment production --service api
@@ -1015,6 +990,250 @@ function maskApiKey(value: string): string {
   }
 
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
+}
+
+function buildMonitorPayload(config: CliConfig, options: ParsedArgs['options']): Record<string, unknown> {
+  const projectId = getStringOption(options, 'project-id') || resolveProjectId(config);
+  assertValue(projectId, 'project ID');
+
+  const payload: Record<string, unknown> = {
+    projectId,
+    name: getRequiredOption(options, 'name'),
+    url: getRequiredOption(options, 'url'),
+    type: getStringOption(options, 'type') || 'HTTP',
+    httpMethod: getStringOption(options, 'method') || 'GET',
+  };
+
+  assignOptionalNumber(payload, options, 'interval', 'intervalSeconds');
+  assignOptionalNumber(payload, options, 'timeout', 'timeoutMs');
+  assignOptionalNumber(payload, options, 'expected-status', 'expectedStatus');
+  assignOptionalNumber(payload, options, 'retries', 'retries');
+  assignOptionalString(payload, options, 'service', 'serviceName');
+  assignOptionalString(payload, options, 'feature', 'featureName');
+  assignOptionalString(payload, options, 'journey', 'customerJourney');
+  assignOptionalString(payload, options, 'owner', 'teamOwner');
+  assignOptionalString(payload, options, 'region', 'region');
+  assignOptionalString(payload, options, 'business-criticality', 'businessCriticality');
+  assignOptionalString(payload, options, 'sla-tier', 'slaTier');
+
+  const headers = parseJsonOption<Record<string, string>>(options, 'headers');
+  const body = parseJsonOption<unknown>(options, 'body');
+  if (headers) {
+    payload.headers = headers;
+  }
+  if (body !== undefined) {
+    payload.body = body;
+  }
+
+  return payload;
+}
+
+async function buildInteractiveMonitorPayload(
+  client: ZfApiClient,
+  config: CliConfig,
+  options: ParsedArgs['options'],
+): Promise<Record<string, unknown>> {
+  ensureInteractive();
+  printBanner('Monitor wizard', 'Create a monitor with guided prompts and sensible defaults.');
+
+  const projects = await client.listProjects();
+  if (projects.length === 0) {
+    throw new Error('No projects found. Create a project first with `zf projects create`.');
+  }
+
+  const selectedProject = await selectProject(projects, config, getStringOption(options, 'project-id'));
+  const type = (await promptChoice('Monitor type', MONITOR_TYPES, getStringOption(options, 'type') || 'HTTP')) as MonitorType;
+  const url = await promptText({
+    label: type === 'HTTP' || type === 'SSL' ? 'Target URL' : 'Target host or address',
+    defaultValue: getStringOption(options, 'url'),
+    required: true,
+  });
+  const name = await promptText({
+    label: 'Monitor name',
+    defaultValue: getStringOption(options, 'name') || inferMonitorName(url),
+    required: true,
+  });
+
+  const payload: Record<string, unknown> = {
+    projectId: selectedProject.id,
+    name,
+    url,
+    type,
+    httpMethod:
+      type === 'HTTP'
+        ? await promptChoice('HTTP method', HTTP_METHODS, getStringOption(options, 'method') || 'GET')
+        : getStringOption(options, 'method') || 'GET',
+    intervalSeconds: await promptNumber('Check interval in seconds', getNumberOption(options, 'interval') || 60, 10, 86400),
+    timeoutMs: await promptNumber('Timeout in milliseconds', getNumberOption(options, 'timeout') || 5000, 1000, 120000),
+  };
+
+  if (type === 'HTTP') {
+    payload.expectedStatus = await promptNumber(
+      'Expected HTTP status',
+      getNumberOption(options, 'expected-status') || 200,
+      100,
+      599,
+    );
+  }
+
+  const advanced = await promptConfirm('Configure advanced metadata and reliability settings?', false);
+  if (advanced) {
+    payload.retries = await promptNumber('Retries before final failure', getNumberOption(options, 'retries') || 0, 0, 5);
+
+    const serviceName = await promptText({
+      label: 'Service name',
+      defaultValue: getStringOption(options, 'service'),
+      required: false,
+    });
+    const featureName = await promptText({
+      label: 'Feature name',
+      defaultValue: getStringOption(options, 'feature'),
+      required: false,
+    });
+    const customerJourney = await promptText({
+      label: 'Customer journey',
+      defaultValue: getStringOption(options, 'journey'),
+      required: false,
+    });
+    const teamOwner = await promptText({
+      label: 'Team owner',
+      defaultValue: getStringOption(options, 'owner'),
+      required: false,
+    });
+    const region = await promptText({
+      label: 'Region',
+      defaultValue: getStringOption(options, 'region'),
+      required: false,
+    });
+
+    assignIfPresent(payload, 'serviceName', serviceName);
+    assignIfPresent(payload, 'featureName', featureName);
+    assignIfPresent(payload, 'customerJourney', customerJourney);
+    assignIfPresent(payload, 'teamOwner', teamOwner);
+    assignIfPresent(payload, 'region', region);
+
+    payload.businessCriticality = await promptChoice(
+      'Business criticality',
+      [...BUSINESS_CRITICALITIES],
+      getStringOption(options, 'business-criticality') || 'MEDIUM',
+    );
+    payload.slaTier = await promptChoice(
+      'SLA tier',
+      [...SLA_TIERS],
+      getStringOption(options, 'sla-tier') || 'STANDARD',
+    );
+  }
+
+  printSection('Monitor summary');
+  printKeyValue([
+    { key: 'project', value: `${selectedProject.name} (${selectedProject.slug})` },
+    { key: 'name', value: String(payload.name) },
+    { key: 'type', value: String(payload.type) },
+    { key: 'target', value: String(payload.url) },
+    { key: 'interval', value: `${payload.intervalSeconds} seconds` },
+    { key: 'timeout', value: `${payload.timeoutMs} ms` },
+  ]);
+
+  const confirmed = await promptConfirm('Create this monitor now?', true);
+  if (!confirmed) {
+    throw new Error('Monitor creation cancelled.');
+  }
+
+  return payload;
+}
+
+async function selectProject(
+  projects: any[],
+  config: CliConfig,
+  explicitProjectId?: string,
+): Promise<any> {
+  if (explicitProjectId) {
+    const project = projects.find((entry) => entry.id === explicitProjectId);
+    if (!project) {
+      throw new Error(`Project ${explicitProjectId} was not found.`);
+    }
+    return project;
+  }
+
+  if (config.projectId) {
+    const project = projects.find((entry) => entry.id === config.projectId);
+    if (project) {
+      const reuse = await promptConfirm(`Use default project ${project.name}?`, true);
+      if (reuse) {
+        return project;
+      }
+    }
+  }
+
+  printSection('Projects');
+  printTable(
+    projects.map((project, index) => ({
+      '#': index + 1,
+      name: project.name,
+      slug: project.slug,
+      id: project.id,
+    })),
+  );
+
+  const selection = await promptText({
+    label: 'Choose project number',
+    required: true,
+  });
+  const selectedIndex = Number(selection) - 1;
+  if (Number.isNaN(selectedIndex) || !projects[selectedIndex]) {
+    throw new Error('Invalid project selection.');
+  }
+
+  return projects[selectedIndex];
+}
+
+async function promptChoice(label: string, choices: string[], defaultValue?: string): Promise<string> {
+  while (true) {
+    printMuted(`${label}: ${choices.join(', ')}`);
+    const value = (
+      await promptText({
+        label,
+        defaultValue,
+        required: true,
+      })
+    ).toUpperCase();
+
+    const match = choices.find((choice) => choice.toUpperCase() === value);
+    if (match) {
+      return match;
+    }
+    printWarning(`Choose one of: ${choices.join(', ')}`);
+  }
+}
+
+async function promptNumber(label: string, defaultValue: number, min: number, max: number): Promise<number> {
+  while (true) {
+    const raw = await promptText({
+      label,
+      defaultValue: String(defaultValue),
+      required: true,
+    });
+    const parsed = Number(raw);
+    if (!Number.isNaN(parsed) && parsed >= min && parsed <= max) {
+      return parsed;
+    }
+    printWarning(`Enter a number between ${min} and ${max}.`);
+  }
+}
+
+function assignIfPresent(target: Record<string, unknown>, key: string, value: string): void {
+  if (value.trim()) {
+    target[key] = value.trim();
+  }
+}
+
+function inferMonitorName(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, '') || url;
+  } catch {
+    return url;
+  }
 }
 
 main().catch((error) => {
