@@ -437,11 +437,9 @@ async function handleProjects(
       return;
     }
     case 'create': {
-      const payload = {
-        name: getRequiredOption(options, 'name'),
-        slug: getRequiredOption(options, 'slug'),
-        description: getStringOption(options, 'description'),
-      };
+      const payload = getBooleanOption(options, 'interactive')
+        ? await buildInteractiveProjectPayload(options)
+        : buildProjectPayload(options);
       const project = await client.createProject(payload);
       if (hasJsonFlag(options)) {
         printJson(project);
@@ -793,6 +791,7 @@ Examples:
   zf init
   zf doctor
   zf projects use --slug production
+  zf projects create --interactive
   zf monitors list
   zf monitors create --interactive
   zf monitors checks --id <monitor-id> --limit 20
@@ -1028,6 +1027,64 @@ function buildMonitorPayload(config: CliConfig, options: ParsedArgs['options']):
   return payload;
 }
 
+function buildProjectPayload(options: ParsedArgs['options']): {
+  name: string;
+  slug: string;
+  description?: string;
+} {
+  return {
+    name: getRequiredOption(options, 'name'),
+    slug: getRequiredOption(options, 'slug'),
+    description: getStringOption(options, 'description'),
+  };
+}
+
+async function buildInteractiveProjectPayload(
+  options: ParsedArgs['options'],
+): Promise<{ name: string; slug: string; description?: string }> {
+  ensureInteractive();
+  printBanner('Project wizard', 'Create a project with guided prompts and a quick preview.');
+
+  const name = await promptText({
+    label: 'Project name',
+    defaultValue: getStringOption(options, 'name'),
+    required: true,
+  });
+  const slug = await promptText({
+    label: 'Project slug',
+    defaultValue: getStringOption(options, 'slug') || slugify(name),
+    required: true,
+  });
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    throw new Error('Slug must be lowercase alphanumeric with hyphens only.');
+  }
+
+  const description = await promptText({
+    label: 'Description',
+    defaultValue: getStringOption(options, 'description'),
+    required: false,
+  });
+
+  printSection('Project summary');
+  printKeyValue([
+    { key: 'name', value: name },
+    { key: 'slug', value: slug },
+    { key: 'description', value: description || '-' },
+  ]);
+
+  const confirmed = await promptConfirm('Create this project now?', true);
+  if (!confirmed) {
+    throw new Error('Project creation cancelled.');
+  }
+
+  return {
+    name,
+    slug,
+    description: description || undefined,
+  };
+}
+
 async function buildInteractiveMonitorPayload(
   client: ZfApiClient,
   config: CliConfig,
@@ -1234,6 +1291,15 @@ function inferMonitorName(url: string): string {
   } catch {
     return url;
   }
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/--+/g, '-');
 }
 
 main().catch((error) => {

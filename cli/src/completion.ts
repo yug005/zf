@@ -29,7 +29,7 @@ const COMMANDS: Record<string, CommandSpec> = {
   projects: {
     subcommands: {
       list: { options: ['--json'] },
-      create: { options: ['--name', '--slug', '--description', '--json'] },
+      create: { options: ['--name', '--slug', '--description', '--interactive', '--json'] },
       use: { options: ['--id', '--slug'] },
       current: { options: [] },
     },
