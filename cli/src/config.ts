@@ -5,6 +5,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 export type CliConfig = {
   baseUrl?: string;
   apiKey?: string;
+  projectId?: string;
+  projectName?: string;
 };
 
 const CONFIG_DIR = join(homedir(), '.zer0friction');
@@ -17,6 +19,8 @@ export async function loadConfig(): Promise<CliConfig> {
     return {
       baseUrl: parsed.baseUrl?.trim(),
       apiKey: parsed.apiKey?.trim(),
+      projectId: parsed.projectId?.trim(),
+      projectName: parsed.projectName?.trim(),
     };
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
@@ -42,4 +46,8 @@ export function resolveBaseUrl(config: CliConfig, explicit?: string): string | u
 
 export function resolveApiKey(config: CliConfig, explicit?: string): string | undefined {
   return explicit?.trim() || process.env.ZF_API_KEY?.trim() || config.apiKey?.trim();
+}
+
+export function resolveProjectId(config: CliConfig, explicit?: string): string | undefined {
+  return explicit?.trim() || process.env.ZF_PROJECT_ID?.trim() || config.projectId?.trim();
 }

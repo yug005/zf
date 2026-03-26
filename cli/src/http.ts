@@ -1,7 +1,7 @@
 import { resolveApiKey, resolveBaseUrl, type CliConfig } from './config.js';
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PATCH';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
   auth?: boolean;
   apiKey?: string;
@@ -38,6 +38,10 @@ export class ZfApiClient {
     return this.request(`/monitors${search}`, options);
   }
 
+  async getMonitor(id: string, options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>): Promise<any> {
+    return this.request(`/monitors/${id}`, options);
+  }
+
   async createMonitor(
     payload: Record<string, unknown>,
     options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>,
@@ -51,6 +55,48 @@ export class ZfApiClient {
 
   async resumeMonitor(id: string, options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>): Promise<any> {
     return this.request(`/monitors/${id}/resume`, { ...options, method: 'PATCH' });
+  }
+
+  async updateMonitor(
+    id: string,
+    payload: Record<string, unknown>,
+    options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>,
+  ): Promise<any> {
+    return this.request(`/monitors/${id}`, { ...options, method: 'PATCH', body: payload });
+  }
+
+  async deleteMonitor(id: string, options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>): Promise<any> {
+    return this.request(`/monitors/${id}`, { ...options, method: 'DELETE' });
+  }
+
+  async listChecks(
+    monitorId: string,
+    query?: { limit?: number; offset?: number },
+    options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>,
+  ): Promise<any[]> {
+    const search = new URLSearchParams({ monitorId });
+    if (query?.limit !== undefined) {
+      search.set('limit', String(query.limit));
+    }
+    if (query?.offset !== undefined) {
+      search.set('offset', String(query.offset));
+    }
+    return this.request(`/checks?${search.toString()}`, options);
+  }
+
+  async listApiKeys(options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>): Promise<any[]> {
+    return this.request('/api-keys', options);
+  }
+
+  async createApiKey(
+    payload: { name: string },
+    options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>,
+  ): Promise<any> {
+    return this.request('/api-keys', { ...options, method: 'POST', body: payload });
+  }
+
+  async revokeApiKey(id: string, options?: Pick<RequestOptions, 'apiKey' | 'baseUrl'>): Promise<any> {
+    return this.request(`/api-keys/${id}`, { ...options, method: 'DELETE' });
   }
 
   async reportDeploy(
