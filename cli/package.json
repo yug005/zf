@@ -1,0 +1,14 @@
+{
+  "name": "@zer0friction/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Terminal interface for Zer0Friction",
+  "type": "module",
+  "bin": {
+    "zf": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  }
+}
