@@ -49,6 +49,9 @@ async function main(): Promise<void> {
     case 'init':
       await handleInit(client, config, parsed.options);
       return;
+    case 'doctor':
+      await handleDoctor(client, config, parsed.options);
+      return;
     case 'status':
       await handleStatus(client, config, parsed.options);
       return;
@@ -184,6 +187,122 @@ async function handleStatus(
   ]);
   printSection('Health payload');
   printJson(health);
+}
+
+async function handleDoctor(
+  client: ZfApiClient,
+  config: CliConfig,
+  options: ParsedArgs['options'],
+): Promise<void> {
+  const baseUrl = resolveBaseUrl(config, getStringOption(options, 'base-url'));
+  const rows: Array<{ check: string; status: string; detail: string }> = [];
+
+  if (!baseUrl) {
+    rows.push({
+      check: 'backend url',
+      status: formatStatus('FAILURE'),
+      detail: 'Missing base URL. Run `zf init` or `zf config set base-url <url>`.',
+    });
+  } else {
+    rows.push({
+      check: 'backend url',
+      status: formatStatus('SUCCESS'),
+      detail: baseUrl,
+    });
+
+    try {
+      const health = await client.getHealth(baseUrl);
+      rows.push({
+        check: 'health check',
+        status: formatStatus('SUCCESS'),
+        detail: summarizeHealth(health),
+      });
+    } catch (error) {
+      rows.push({
+        check: 'health check',
+        status: formatStatus('FAILURE'),
+        detail: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  if (!config.apiKey) {
+    rows.push({
+      check: 'api key',
+      status: formatStatus('FAILURE'),
+      detail: 'Missing API key. Run `zf init` or `zf auth login`.',
+    });
+  } else {
+    rows.push({
+      check: 'api key',
+      status: formatStatus('SUCCESS'),
+      detail: maskApiKey(config.apiKey),
+    });
+
+    try {
+      const me = await client.getMe();
+      rows.push({
+        check: 'auth',
+        status: formatStatus('SUCCESS'),
+        detail: `${me.email} (${me.subscriptionPlan || 'plan unknown'})`,
+      });
+    } catch (error) {
+      rows.push({
+        check: 'auth',
+        status: formatStatus('FAILURE'),
+        detail: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  if (!config.projectId) {
+    rows.push({
+      check: 'default project',
+      status: formatStatus('ACKNOWLEDGED'),
+      detail: 'No default project selected. Use `zf projects use --id <id>`.',
+    });
+  } else {
+    try {
+      const projects = await client.listProjects();
+      const project = projects.find((entry) => entry.id === config.projectId);
+      rows.push({
+        check: 'default project',
+        status: formatStatus(project ? 'SUCCESS' : 'FAILURE'),
+        detail: project ? `${project.name} (${project.slug})` : `Configured project ${config.projectId} was not found`,
+      });
+
+      if (project) {
+        const monitors = await client.listMonitors(project.id);
+        rows.push({
+          check: 'project monitors',
+          status: formatStatus('SUCCESS'),
+          detail: `${monitors.length} monitor(s) available`,
+        });
+      }
+    } catch (error) {
+      rows.push({
+        check: 'default project',
+        status: formatStatus('FAILURE'),
+        detail: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  if (hasJsonFlag(options)) {
+    printJson(rows);
+    return;
+  }
+
+  printBanner('Doctor', 'A quick environment and connectivity diagnostic for the CLI.');
+  printTable(rows);
+
+  const failed = rows.filter((row) => row.detail && row.status.includes('FAILURE')).length;
+  if (failed > 0) {
+    printWarning(`Doctor found ${failed} failing check(s).`);
+    process.exitCode = 1;
+  } else {
+    printSuccess('Doctor checks passed.');
+  }
 }
 
 async function handleConfig(
@@ -685,6 +804,7 @@ function printHelp(): void {
   printBanner('Command reference', 'A fast CLI for the monitor workflows you repeat most.');
   console.log(`Usage:
   zf init
+  zf doctor
   zf status
   zf config show|get|set|clear
   zf auth login --base-url <url> --api-key <key>
@@ -697,6 +817,7 @@ function printHelp(): void {
 
 Examples:
   zf init
+  zf doctor
   zf projects use --slug production
   zf monitors list
   zf monitors checks --id <monitor-id> --limit 20
@@ -871,6 +992,21 @@ function inferProvider(repository?: string): string | undefined {
     return 'GITHUB';
   }
   return undefined;
+}
+
+function summarizeHealth(health: unknown): string {
+  if (!health || typeof health !== 'object') {
+    return 'Health endpoint responded';
+  }
+
+  const status = 'status' in health ? String((health as { status?: unknown }).status) : 'unknown';
+  const details = 'details' in health ? (health as { details?: unknown }).details : undefined;
+  const databaseUp =
+    details && typeof details === 'object' && 'database' in details
+      ? ((details as { database?: { status?: string } }).database?.status || 'unknown')
+      : 'unknown';
+
+  return `status=${status}, database=${databaseUp}`;
 }
 
 function maskApiKey(value: string): string {

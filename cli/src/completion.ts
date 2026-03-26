@@ -1,19 +1,141 @@
 type ShellName = 'bash' | 'zsh' | 'fish' | 'powershell';
 
-const COMMANDS = {
-  init: ['--base-url', '--api-key', '--non-interactive'],
-  status: ['--base-url', '--json'],
-  config: ['show', 'get', 'set', 'clear'],
-  auth: ['login', 'whoami'],
-  projects: ['list', 'create', 'use', 'current'],
-  'api-keys': ['list', 'create', 'revoke'],
-  monitors: ['list', 'get', 'checks', 'create', 'update', 'pause', 'resume', 'delete'],
-  deploy: ['report'],
-  completion: ['bash', 'zsh', 'fish', 'powershell'],
-  help: [],
-} satisfies Record<string, string[]>;
+type CommandSpec = {
+  options?: string[];
+  subcommands?: Record<string, { options?: string[] }>;
+};
 
 const GLOBAL_OPTIONS = ['--help', '--json'];
+const CONFIG_KEYS = ['base-url', 'api-key', 'project-id'];
+
+const COMMANDS: Record<string, CommandSpec> = {
+  init: { options: ['--base-url', '--api-key', '--non-interactive'] },
+  doctor: { options: ['--base-url', '--json'] },
+  status: { options: ['--base-url', '--json'] },
+  config: {
+    subcommands: {
+      show: { options: ['--json'] },
+      get: { options: CONFIG_KEYS },
+      set: { options: CONFIG_KEYS },
+      clear: { options: CONFIG_KEYS },
+    },
+  },
+  auth: {
+    subcommands: {
+      login: { options: ['--base-url', '--api-key'] },
+      whoami: { options: ['--json'] },
+    },
+  },
+  projects: {
+    subcommands: {
+      list: { options: ['--json'] },
+      create: { options: ['--name', '--slug', '--description', '--json'] },
+      use: { options: ['--id', '--slug'] },
+      current: { options: [] },
+    },
+  },
+  'api-keys': {
+    subcommands: {
+      list: { options: ['--json'] },
+      create: { options: ['--name', '--json'] },
+      revoke: { options: ['--id'] },
+    },
+  },
+  monitors: {
+    subcommands: {
+      list: { options: ['--project-id', '--json'] },
+      get: { options: ['--id', '--json'] },
+      checks: { options: ['--id', '--limit', '--json'] },
+      create: {
+        options: [
+          '--project-id',
+          '--name',
+          '--url',
+          '--type',
+          '--method',
+          '--interval',
+          '--timeout',
+          '--expected-status',
+          '--retries',
+          '--service',
+          '--feature',
+          '--journey',
+          '--owner',
+          '--region',
+          '--business-criticality',
+          '--sla-tier',
+          '--headers',
+          '--body',
+          '--interactive',
+          '--json',
+        ],
+      },
+      update: {
+        options: [
+          '--id',
+          '--name',
+          '--url',
+          '--type',
+          '--method',
+          '--interval',
+          '--timeout',
+          '--expected-status',
+          '--retries',
+          '--service',
+          '--feature',
+          '--journey',
+          '--owner',
+          '--region',
+          '--business-criticality',
+          '--sla-tier',
+          '--headers',
+          '--body',
+          '--json',
+        ],
+      },
+      pause: { options: ['--id'] },
+      resume: { options: ['--id'] },
+      delete: { options: ['--id', '--force'] },
+    },
+  },
+  deploy: {
+    subcommands: {
+      report: {
+        options: [
+          '--project-id',
+          '--project-slug',
+          '--monitor-id',
+          '--provider',
+          '--type',
+          '--title',
+          '--summary',
+          '--service',
+          '--environment',
+          '--version',
+          '--external-id',
+          '--repository',
+          '--branch',
+          '--commit-sha',
+          '--deployment-id',
+          '--deployment-url',
+          '--happened-at',
+          '--watch-window',
+          '--metadata',
+          '--json',
+        ],
+      },
+    },
+  },
+  completion: {
+    subcommands: {
+      bash: {},
+      zsh: {},
+      fish: {},
+      powershell: {},
+    },
+  },
+  help: {},
+};
 
 export function isSupportedShell(value: string): value is ShellName {
   return value === 'bash' || value === 'zsh' || value === 'fish' || value === 'powershell';
@@ -48,20 +170,43 @@ export function renderInstallHint(shell: ShellName): string {
 function renderBashCompletion(): string {
   const topLevel = Object.keys(COMMANDS).join(' ');
   const cases = Object.entries(COMMANDS)
-    .map(
-      ([command, values]) =>
-        `    ${command}) COMPREPLY=( $(compgen -W "${values.join(' ')} ${GLOBAL_OPTIONS.join(' ')}" -- "$cur") ) ;;`,
-    )
+    .map(([command, spec]) => {
+      const subcommands = Object.keys(spec.subcommands || {});
+      const options = unique(spec.options || []);
+      const subcommandCases = Object.entries(spec.subcommands || {})
+        .map(
+          ([subcommand, subSpec]) =>
+            `      ${subcommand}) COMPREPLY=( $(compgen -W "${unique([...(subSpec.options || []), ...GLOBAL_OPTIONS]).join(' ')}" -- "$cur") ) ;;`,
+        )
+        .join('\n');
+      const topLevelValues = unique([...subcommands, ...options, ...GLOBAL_OPTIONS]).join(' ');
+      const fallbackValues = unique([...options, ...GLOBAL_OPTIONS]).join(' ');
+      const nestedCase = subcommandCases
+        ? `      case "\${words[2]}" in
+${subcommandCases}
+        *)
+          COMPREPLY=( $(compgen -W "${fallbackValues}" -- "$cur") )
+          ;;
+      esac`
+        : `      COMPREPLY=( $(compgen -W "${fallbackValues}" -- "$cur") )`;
+
+      return `    ${command})
+      if [[ \$cword -eq 2 ]]; then
+        COMPREPLY=( $(compgen -W "${topLevelValues}" -- "$cur") )
+        return
+      fi
+${nestedCase}
+      ;;`;
+    })
     .join('\n');
+
   return `# Zer0Friction bash completion
 _zf_completion() {
   local cur prev words cword
   _init_completion || return
 
-  local commands="${topLevel}"
-
   if [[ \$cword -eq 1 ]]; then
-    COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+    COMPREPLY=( $(compgen -W "${topLevel}" -- "$cur") )
     return
   fi
 
@@ -78,15 +223,21 @@ complete -F _zf_completion zf
 }
 
 function renderZshCompletion(): string {
-  const commands = Object.keys(COMMANDS)
+  const topLevel = Object.keys(COMMANDS)
     .map((command) => `'${command}:${command}'`)
     .join(' ');
   const cases = Object.entries(COMMANDS)
-    .map(([command, values]) => {
-      const valuesSpec = values.map((value) => `'${value}:${value}'`).join(' ');
-      return `${command})
-      _values 'zf ${command}' ${valuesSpec}
-      ;;
+    .map(([command, spec]) => {
+      const commandEntries = unique([
+        ...Object.keys(spec.subcommands || {}),
+        ...(spec.options || []),
+        ...GLOBAL_OPTIONS,
+      ])
+        .map((value) => `'${value}:${value}'`)
+        .join(' ');
+      return `  ${command})
+    _values 'zf ${command}' ${commandEntries}
+    ;;
 `;
     })
     .join('');
@@ -94,7 +245,7 @@ function renderZshCompletion(): string {
   return `#compdef zf
 
 local -a commands
-commands=(${commands})
+commands=(${topLevel})
 
 if (( CURRENT == 2 )); then
   _describe 'command' commands
@@ -114,9 +265,15 @@ function renderFishCompletion(): string {
     (command) => `complete -c zf -f -n "__fish_use_subcommand" -a "${command}"`,
   );
 
-  for (const [command, values] of Object.entries(COMMANDS)) {
-    for (const value of values) {
-      lines.push(`complete -c zf -f -n "__fish_seen_subcommand_from ${command}" -a "${value}"`);
+  for (const [command, spec] of Object.entries(COMMANDS)) {
+    for (const option of spec.options || []) {
+      lines.push(`complete -c zf -f -n "__fish_seen_subcommand_from ${command}" -a "${option}"`);
+    }
+    for (const [subcommand, subSpec] of Object.entries(spec.subcommands || {})) {
+      lines.push(`complete -c zf -f -n "__fish_seen_subcommand_from ${command}" -a "${subcommand}"`);
+      for (const option of subSpec.options || []) {
+        lines.push(`complete -c zf -f -n "__fish_seen_subcommand_from ${subcommand}" -a "${option}"`);
+      }
     }
   }
 
@@ -126,9 +283,21 @@ ${lines.join('\n')}
 }
 
 function renderPowerShellCompletion(): string {
-  const commandCases = Object.entries(COMMANDS)
-    .map(([command, values]) => {
-      const resultValues = values
+  const topLevel = Object.keys(COMMANDS)
+    .map(
+      (command) =>
+        `[System.Management.Automation.CompletionResult]::new('${command}','${command}','ParameterValue','${command}')`,
+    )
+    .join(",\n        ");
+
+  const cases = Object.entries(COMMANDS)
+    .map(([command, spec]) => {
+      const entries = unique([
+        ...Object.keys(spec.subcommands || {}),
+        ...(spec.options || []),
+        ...GLOBAL_OPTIONS,
+      ]);
+      const valueList = entries
         .map(
           (value) =>
             `[System.Management.Automation.CompletionResult]::new('${value}','${value}','ParameterValue','${value}')`,
@@ -137,18 +306,11 @@ function renderPowerShellCompletion(): string {
 
       return `      '${command}' {
         return @(
-          ${resultValues || ''}
+          ${valueList}
         )
       }`;
     })
     .join('\n');
-
-  const topLevel = Object.keys(COMMANDS)
-    .map(
-      (command) =>
-        `[System.Management.Automation.CompletionResult]::new('${command}','${command}','ParameterValue','${command}')`,
-    )
-    .join(",\n        ");
 
   return `Register-ArgumentCompleter -Native -CommandName zf -ScriptBlock {
   param($wordToComplete, $commandAst, $cursorPosition)
@@ -161,9 +323,13 @@ function renderPowerShellCompletion(): string {
   }
 
   switch ($words[1]) {
-${commandCases}
+${cases}
     default { return @() }
   }
 }
 `;
+}
+
+function unique(values: string[]): string[] {
+  return [...new Set(values)];
 }

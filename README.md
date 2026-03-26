@@ -86,6 +86,7 @@ Run it from the repo:
 
 ```powershell
 node cli/dist/index.js help
+node cli/dist/index.js doctor
 node cli/dist/index.js init
 node cli/dist/index.js monitors list
 ```
