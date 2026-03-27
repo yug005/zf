@@ -70,6 +70,9 @@ export class MonitorService {
         headers: dto.headers as never,
         body: dto.body as never,
         retries: dto.retries,
+        status: MonitorStatus.UP,
+        isActive: true,
+        pausedByBilling: false,
         projectId: dto.projectId,
       },
     });
