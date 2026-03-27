@@ -9,7 +9,7 @@ const GLOBAL_OPTIONS = ['--help', '--json'];
 const CONFIG_KEYS = ['base-url', 'api-key', 'project-id'];
 
 const COMMANDS: Record<string, CommandSpec> = {
-  init: { options: ['--base-url', '--api-key', '--non-interactive'] },
+  init: { options: ['--base-url', '--api-key', '--non-interactive', '--skip-monitor'] },
   doctor: { options: ['--base-url', '--json'] },
   status: { options: ['--base-url', '--json'] },
   config: {

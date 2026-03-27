@@ -93,7 +93,7 @@ async function handleInit(
   config: CliConfig,
   options: ParsedArgs['options'],
 ): Promise<void> {
-  printBanner('Guided setup', 'Connect the CLI to your Zer0Friction workspace in a couple of prompts.');
+  printBanner('Guided setup', 'Connect the CLI, pick a project, and optionally create your first monitor.');
 
   const interactive = !getBooleanOption(options, 'non-interactive');
   if (interactive) {
@@ -125,28 +125,39 @@ async function handleInit(
   const me = await client.getMe({ baseUrl, apiKey });
   printSuccess(`Authenticated as ${me.email}`);
 
-  const projects = await client.listProjects({ baseUrl, apiKey });
+  let projects = await client.listProjects({ baseUrl, apiKey });
   let selectedProject = projects.find((project) => project.id === resolveProjectId(config));
 
   if (!selectedProject && projects.length === 1) {
     selectedProject = projects[0];
   }
 
-  if (!selectedProject && interactive && projects.length > 0) {
-    printSection('Projects');
-    printTable(
-      projects.map((project, index) => ({
-        '#': index + 1,
-        id: project.id,
-        name: project.name,
-        slug: project.slug,
-      })),
-    );
-    const selection = await promptText({
-      label: 'Choose default project number (leave blank to skip)',
-      required: false,
-    });
-    if (selection) {
+  if (interactive) {
+    if (projects.length === 0) {
+      printWarning('No projects found yet.');
+      const createProject = await promptConfirm('Create your first project now?', true);
+      if (!createProject) {
+        throw new Error('Setup cancelled because no project is available.');
+      }
+      const payload = await buildInteractiveProjectPayload({});
+      selectedProject = await client.createProject(payload, { baseUrl, apiKey });
+      projects = [selectedProject];
+      printSuccess(`Created project ${selectedProject.name}`);
+    } else if (!selectedProject) {
+      printSection('Projects');
+      printTable(
+        projects.map((project, index) => ({
+          '#': index + 1,
+          id: project.id,
+          name: project.name,
+          slug: project.slug,
+        })),
+      );
+      const selection = await promptText({
+        label: 'Choose default project number',
+        defaultValue: '1',
+        required: true,
+      });
       const chosenIndex = Number(selection) - 1;
       if (Number.isNaN(chosenIndex) || !projects[chosenIndex]) {
         throw new Error('Invalid project selection.');
@@ -171,7 +182,37 @@ async function handleInit(
     { key: 'api-key', value: maskApiKey(apiKey) },
     { key: 'project', value: selectedProject ? `${selectedProject.name} (${selectedProject.id})` : '-' },
   ]);
-  printMuted('You can now run `zf status`, `zf monitors list`, or `zf deploy report` without repeating flags.');
+
+  if (
+    interactive &&
+    selectedProject &&
+    !getBooleanOption(options, 'skip-monitor')
+  ) {
+    const createMonitor = await promptConfirm('Create your first monitor now?', true);
+    if (createMonitor) {
+      const monitorPayload = await buildInteractiveMonitorPayload(client, nextConfig, options, {
+        project: selectedProject,
+        skipProjectPrompt: true,
+      });
+      const monitor = await client.createMonitor(monitorPayload, { baseUrl, apiKey });
+      printSuccess(`Created monitor ${monitor.name}`);
+      printKeyValue([
+        { key: 'monitor-id', value: monitor.id },
+        { key: 'url', value: monitor.url },
+        { key: 'status', value: monitor.status },
+      ]);
+    }
+  }
+
+  printSection('Next steps');
+  printKeyValue([
+    { key: 'health', value: 'zf status' },
+    { key: 'diagnostics', value: 'zf doctor' },
+    { key: 'projects', value: 'zf projects list' },
+    { key: 'monitors', value: 'zf monitors list' },
+    { key: 'deploys', value: 'zf deploy report --environment production --service api' },
+  ]);
+  printMuted('Your base URL, API key, and default project are now saved for future commands.');
 }
 
 async function handleStatus(
@@ -773,9 +814,9 @@ async function handleCompletion(action: string | undefined): Promise<void> {
 }
 
 function printHelp(): void {
-  printBanner('Command reference', 'A fast CLI for the monitor workflows you repeat most.');
+  printBanner('Command reference', 'A fast CLI for onboarding, monitoring, and deploy workflows.');
   console.log(`Usage:
-  zf init
+  zf init [--skip-monitor]
   zf doctor
   zf status
   zf config show|get|set|clear
@@ -789,6 +830,7 @@ function printHelp(): void {
 
 Examples:
   zf init
+  zf init --skip-monitor
   zf doctor
   zf projects use --slug production
   zf projects create --interactive
@@ -1089,16 +1131,31 @@ async function buildInteractiveMonitorPayload(
   client: ZfApiClient,
   config: CliConfig,
   options: ParsedArgs['options'],
+  init?: {
+    project?: any;
+    skipProjectPrompt?: boolean;
+  },
 ): Promise<Record<string, unknown>> {
   ensureInteractive();
   printBanner('Monitor wizard', 'Create a monitor with guided prompts and sensible defaults.');
 
-  const projects = await client.listProjects();
-  if (projects.length === 0) {
-    throw new Error('No projects found. Create a project first with `zf projects create`.');
-  }
+  const selectedProject =
+    init?.project ||
+    (await (async () => {
+      const projects = await client.listProjects();
+      if (projects.length === 0) {
+        throw new Error('No projects found. Create a project first with `zf projects create`.');
+      }
 
-  const selectedProject = await selectProject(projects, config, getStringOption(options, 'project-id'));
+      if (init?.skipProjectPrompt && config.projectId) {
+        const project = projects.find((entry) => entry.id === config.projectId);
+        if (project) {
+          return project;
+        }
+      }
+
+      return selectProject(projects, config, getStringOption(options, 'project-id'));
+    })());
   const type = (await promptChoice('Monitor type', MONITOR_TYPES, getStringOption(options, 'type') || 'HTTP')) as MonitorType;
   const url = await promptText({
     label: type === 'HTTP' || type === 'SSL' ? 'Target URL' : 'Target host or address',
