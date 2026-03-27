@@ -1,5 +1,5 @@
 {
-  "name": "@zer0friction/cli",
+  "name": "zer0friction-cli",
   "version": "0.1.0",
   "description": "Terminal interface for Zer0Friction",
   "license": "UNLICENSED",
