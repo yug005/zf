@@ -1,24 +1,37 @@
 # zer0friction-cli
 
-`zer0friction-cli` is the command-line interface for Zer0Friction. It gives you a faster way to connect a workspace, inspect project health, manage monitors, create API keys, and report deploy events without opening the dashboard.
+Production-ready command line tooling for Zer0Friction.
 
-It is built for operators and developers who want:
+`zer0friction-cli` gives teams a fast terminal interface for connecting a workspace, inspecting health, creating monitors, managing API keys, and reporting deploys without bouncing through the web UI for every operational task.
 
-- A guided setup flow for first-time onboarding
-- Colorful, high-signal terminal output
-- Interactive monitor and project creation
-- Scriptable JSON output when automation matters
-- A lightweight deploy reporting workflow from CI or local terminals
+It is designed for engineers who want:
+
+- Fast setup with guided onboarding
+- Clear, high-signal terminal output instead of raw JSON by default
+- Scriptable automation when JSON output is needed
+- Monitor and project management from a terminal
+- Deploy reporting that fits naturally into CI/CD workflows
+
+## Why this exists
+
+Dashboards are great for visibility. Operators still need fast actions.
+
+The Zer0Friction CLI is built to make common workflows feel immediate:
+
+- bring a new workspace online
+- validate auth and backend connectivity
+- create monitors with guided prompts
+- inspect monitor state and recent checks
+- manage API keys safely
+- report deploy events from CI or local terminals
 
 ## Install
-
-### From npm
 
 ```bash
 npm install -g zer0friction-cli
 ```
 
-### Verify the install
+Verify the install:
 
 ```bash
 zf help
@@ -31,9 +44,9 @@ zf doctor
 - A reachable Zer0Friction backend
 - A Zer0Friction API key for authenticated commands
 
-## Quick Start
+## First run
 
-Run the guided setup:
+The fastest way to get started is the guided setup:
 
 ```bash
 zf init
@@ -41,20 +54,20 @@ zf init
 
 This flow helps you:
 
-- Set the backend URL
-- Save your API key locally
-- Select a default project
-- Optionally create your first monitor
+- set your backend URL
+- save your API key locally
+- choose a default project
+- optionally create your first monitor
 
-Once configured, run a quick diagnostic:
+After setup, validate the environment:
 
 ```bash
 zf doctor
 ```
 
-## Common Commands
+## What it can do
 
-### Health and setup
+### Workspace and connectivity
 
 ```bash
 zf init
@@ -85,7 +98,7 @@ zf monitors resume --id <monitor-id>
 zf monitors delete --id <monitor-id>
 ```
 
-### API keys
+### API key management
 
 ```bash
 zf api-keys list
@@ -99,32 +112,61 @@ zf api-keys revoke --id <key-id>
 zf deploy report --environment production --service api
 ```
 
-This is useful for correlating incidents with deploy activity directly from CI/CD pipelines.
+This is especially useful for change tracking and incident correlation from CI/CD systems.
+
+## Quick examples
+
+Create and connect your CLI profile:
+
+```bash
+zf init
+```
+
+Switch the default project:
+
+```bash
+zf projects use --slug production
+```
+
+Create a monitor interactively:
+
+```bash
+zf monitors create --interactive
+```
+
+Inspect recent checks:
+
+```bash
+zf monitors checks --id <monitor-id> --limit 20
+```
+
+Report a deploy from the terminal:
+
+```bash
+zf deploy report \
+  --project-slug production \
+  --environment production \
+  --service api \
+  --provider GITHUB \
+  --type DEPLOY
+```
 
 ## Configuration
 
-The CLI stores config in:
+The CLI stores its local config at:
 
 ```text
 ~/.zer0friction/config.json
 ```
 
-Supported saved values:
+Saved fields:
 
 - `baseUrl`
 - `apiKey`
 - `projectId`
 - `projectName`
 
-You can also override config with environment variables:
-
-```bash
-export ZF_BASE_URL="https://your-api.example.com"
-export ZF_API_KEY="zf_xxx"
-export ZF_PROJECT_ID="project_123"
-```
-
-Config commands:
+You can inspect or update config directly:
 
 ```bash
 zf config show
@@ -133,9 +175,37 @@ zf config set base-url https://your-api.example.com
 zf config clear project-id
 ```
 
-## JSON Output
+## Environment variable overrides
 
-Several commands support `--json` so the CLI can plug into scripts and automation:
+You can override saved config for local shells, CI jobs, or one-off runs:
+
+```bash
+export ZF_BASE_URL="https://your-api.example.com"
+export ZF_API_KEY="zf_xxx"
+export ZF_PROJECT_ID="project_123"
+```
+
+Supported environment variables:
+
+- `ZF_BASE_URL`
+- `ZF_API_KEY`
+- `ZF_PROJECT_ID`
+
+## Interactive workflows
+
+The CLI includes guided flows for:
+
+- `zf init`
+- `zf projects create --interactive`
+- `zf monitors create --interactive`
+
+These flows are optimized for humans.
+
+If you are in CI or another non-interactive environment, pass explicit flags instead.
+
+## JSON output for automation
+
+Human-readable output is the default, but several commands support `--json` for scripts and integrations:
 
 ```bash
 zf doctor --json
@@ -145,21 +215,11 @@ zf projects list --json
 zf monitors list --json
 ```
 
-Use the human-readable UI for everyday work and `--json` when you want machine-readable output.
+Use this when the CLI becomes part of a pipeline, a script, or another tool.
 
-## Interactive Workflows
+## Shell completion
 
-The CLI includes interactive flows for:
-
-- `zf init`
-- `zf projects create --interactive`
-- `zf monitors create --interactive`
-
-These flows are designed to be safe, guided, and fast. If you are in a non-interactive environment, pass explicit flags instead.
-
-## Shell Completion
-
-Generate completion scripts for supported shells:
+Generate completions for supported shells:
 
 ```bash
 zf completion bash
@@ -168,7 +228,7 @@ zf completion fish
 zf completion powershell
 ```
 
-Examples:
+Install examples:
 
 ```bash
 zf completion bash >> ~/.bashrc
@@ -177,9 +237,9 @@ zf completion fish > ~/.config/fish/completions/zf.fish
 zf completion powershell | Out-String | Add-Content $PROFILE
 ```
 
-## CI/CD Example
+## CI/CD usage
 
-You can report a deployment after shipping:
+The CLI works well in deployment pipelines. Example:
 
 ```bash
 zf deploy report \
@@ -188,25 +248,52 @@ zf deploy report \
   --service api \
   --provider GITHUB \
   --type DEPLOY \
-  --version 2026.03.28 \
+  --version "$GITHUB_SHA" \
   --commit-sha "$GITHUB_SHA"
 ```
+
+Typical uses in automation:
+
+- report deploys after shipping
+- validate connectivity with `zf doctor --json`
+- inspect workspace state in support or ops scripts
 
 ## Troubleshooting
 
 If `zf doctor` fails:
 
-- Confirm your backend URL is correct
-- Confirm your API key is valid
-- Confirm the backend is reachable from your terminal
-- Confirm your default project still exists
+- confirm the backend URL is correct
+- confirm the API key is valid
+- confirm the backend is reachable from your network
+- confirm the selected project still exists
 
-If interactive commands fail:
+If interactive prompts fail:
 
-- Make sure you are running in a real TTY shell
-- Use explicit flags in CI or non-interactive sessions
+- make sure you are running in a real TTY shell
+- use explicit flags in CI or other non-interactive environments
 
-## Local Development
+If the CLI authenticates but commands fail:
+
+- run `zf config show`
+- verify the saved base URL and project
+- re-run `zf init` if needed
+
+## Upgrade and reinstall
+
+Update to the latest published version:
+
+```bash
+npm install -g zer0friction-cli@latest
+```
+
+Verify the updated build:
+
+```bash
+zf help
+zf doctor
+```
+
+## Local development
 
 Inside the Zer0Friction repository:
 
@@ -216,12 +303,20 @@ npm run cli:link
 zf help
 ```
 
-You can also package the CLI locally:
+Create a local tarball:
 
 ```bash
 npm run cli:pack
 ```
 
-## Positioning
+## Product philosophy
 
-The goal of `zer0friction-cli` is simple: make Zer0Friction feel fast, operational, and terminal-native. The dashboard remains great for broad visibility, while the CLI is built for quick decisions, deploy workflows, and hands-on incident response.
+The Zer0Friction dashboard remains the broad operational view.
+
+`zer0friction-cli` is the action surface:
+
+- faster than clicking through pages
+- easier to automate than browser flows
+- easier to use under pressure during incidents
+
+If you like terminals, the CLI should feel like the natural front door to Zer0Friction.
