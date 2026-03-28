@@ -6,9 +6,9 @@ import {
   resolveProjectId,
   saveConfig,
   type CliConfig,
-} from './config.js';
-import { isSupportedShell, renderCompletion, renderInstallHint } from './completion.js';
-import { detectGitSnapshot } from './git.js';
+} from './core/config.js';
+import { isSupportedShell, renderCompletion, renderInstallHint } from './ui/completion.js';
+import { detectGitSnapshot } from './core/git.js';
 import {
   formatDate,
   formatLatency,
@@ -24,9 +24,9 @@ import {
   printSuccess,
   printTable,
   printWarning,
-} from './format.js';
-import { ZfApiClient } from './http.js';
-import { ensureInteractive, promptConfirm, promptText } from './prompt.js';
+} from './ui/format.js';
+import { ZfApiClient } from './core/http.js';
+import { ensureInteractive, promptConfirm, promptText } from './ui/prompt.js';
 
 type ParsedArgs = {
   positionals: string[];

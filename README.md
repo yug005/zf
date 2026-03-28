@@ -72,9 +72,24 @@ npm run infra:up       # start postgres + redis
 npm run infra:down     # stop docker services
 ```
 
+## Repository Layout
+
+```text
+.
+|-- cli/                # npm package for the Zer0Friction CLI
+|   |-- src/
+|   |   |-- core/       # config, git helpers, HTTP client
+|   |   `-- ui/         # terminal rendering, prompts, completion
+|-- docs/
+|   `-- operations/     # go-live and deploy automation docs
+|-- frontend/           # Vite frontend
+|-- prisma/             # schema and migrations
+`-- src/                # NestJS backend
+```
+
 ## CLI
 
-Zer0Friction also ships with a terminal CLI from [`cli`](E:/zer0Friction/cli).
+Zer0Friction also ships with a terminal CLI from [`cli`](./cli).
 
 Build it:
 
@@ -135,7 +150,7 @@ What you still need to do:
 2. Optionally add these GitHub repository variables:
    - `ZER0FRICTION_SERVICE_NAME`
    - `ZER0FRICTION_ENVIRONMENT`
-3. Use the workflow in [report-zer0friction-deploy.yml](E:/zer0Friction/.github/workflows/report-zer0friction-deploy.yml)
+3. Use the workflow in [report-zer0friction-deploy.yml](./.github/workflows/report-zer0friction-deploy.yml)
 
 How it works:
 
@@ -152,7 +167,17 @@ Important:
 
 Detailed setup guide:
 
-- [GitHub Deploy Automation Setup](E:/zer0Friction/GITHUB_DEPLOY_AUTOMATION.md)
+- [GitHub Deploy Automation Setup](./docs/operations/GITHUB_DEPLOY_AUTOMATION.md)
+
+## Cleanup
+
+Generated build output should stay out of the way during development:
+
+```powershell
+npm run clean
+npm run cli:clean
+npm run frontend:clean
+```
 
 ## Troubleshooting
 
