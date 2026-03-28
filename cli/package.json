@@ -1,6 +1,6 @@
 {
   "name": "zer0friction-cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A polished terminal cockpit for Zer0Friction monitoring, projects, API keys, and deploy reporting.",
   "license": "UNLICENSED",
   "homepage": "https://zer0friction.in",
@@ -32,6 +32,9 @@
   ],
   "engines": {
     "node": ">=22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
