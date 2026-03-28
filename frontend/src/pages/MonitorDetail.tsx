@@ -1,7 +1,7 @@
-import { Suspense, lazy, useMemo } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import type { ElementType, ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   Activity,
   AlertTriangle,
@@ -9,10 +9,12 @@ import {
   BellRing,
   Clock3,
   Cpu,
+  Download,
   Gauge,
   Globe,
   Layers3,
   Loader2,
+  RefreshCw,
   Server,
   Shield,
   ShieldAlert,
@@ -74,7 +76,15 @@ interface CheckResult {
 
 interface CheckResultsResponse {
   data: CheckResult[];
+  total: number;
+  limit: number;
+  offset: number;
+  days?: number | null;
 }
+
+type HistoryWindow = 'all' | 7 | 30;
+
+const HISTORY_PAGE_SIZE = 100;
 
 interface IncidentSummary {
   id: string;
@@ -266,8 +276,15 @@ const EmptyState = ({
   return <div className={`rounded-2xl border p-4 text-sm ${toneClasses}`}>{message}</div>;
 };
 
+const historyWindowLabel = (window: HistoryWindow) => {
+  if (window === 'all') return 'All';
+  return `${window}d`;
+};
+
 export default function MonitorDetail() {
   const { id } = useParams<{ id: string }>();
+  const [historyWindow, setHistoryWindow] = useState<HistoryWindow>('all');
+  const [isExportingWindow, setIsExportingWindow] = useState<7 | 30 | null>(null);
 
   const { data: monitor, isLoading: isMonitorLoading, isError: isMonitorError } = useQuery({
     queryKey: ['monitor', id],
@@ -284,6 +301,35 @@ export default function MonitorDetail() {
     queryFn: async () => {
       const { data } = await axiosPrivate.get<CheckResultsResponse>(`/checks?monitorId=${id}&limit=50`);
       return data.data;
+    },
+    enabled: !!id,
+    refetchInterval: 10_000,
+  });
+
+  const {
+    data: historyPages,
+    isLoading: isHistoryLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['check-history', id, historyWindow],
+    queryFn: async ({ pageParam = 0 }) => {
+      const params = new URLSearchParams({
+        monitorId: id!,
+        limit: String(HISTORY_PAGE_SIZE),
+        offset: String(pageParam),
+      });
+      if (historyWindow !== 'all') {
+        params.set('days', String(historyWindow));
+      }
+      const { data } = await axiosPrivate.get<CheckResultsResponse>(`/checks?${params.toString()}`);
+      return data;
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => {
+      const nextOffset = lastPage.offset + lastPage.data.length;
+      return nextOffset < lastPage.total ? nextOffset : undefined;
     },
     enabled: !!id,
     refetchInterval: 10_000,
@@ -312,6 +358,11 @@ export default function MonitorDetail() {
   });
 
   const recentFailures = useMemo(() => checks.filter((check) => check.status !== 'SUCCESS').length, [checks]);
+  const historyChecks = useMemo(
+    () => historyPages?.pages.flatMap((page) => page.data) ?? [],
+    [historyPages],
+  );
+  const historyTotal = historyPages?.pages[0]?.total ?? 0;
 
   const detailInsights = useMemo(() => {
     const recentWindow = checks.slice(0, 20);
@@ -351,6 +402,29 @@ export default function MonitorDetail() {
 
   const recentAlerts = monitor?.recentAlerts ?? [];
   const impactMetadata = monitor?.impactMetadata;
+
+  const handleExport = async (days: 7 | 30) => {
+    if (!id) return;
+
+    try {
+      setIsExportingWindow(days);
+      const { data } = await axiosPrivate.get(`/checks/export?monitorId=${id}&days=${days}`, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${monitor.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-history-${days}d.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setIsExportingWindow(null);
+    }
+  };
 
   if (isMonitorLoading) {
     return (
@@ -747,14 +821,62 @@ export default function MonitorDetail() {
 
           <Panel
             title="Check History"
-            description="Latest execution results for this monitor, ordered from newest to oldest."
+            description="Browse historical checks in-app and export longer windows for deeper analysis."
             icon={Activity}
           >
-            {checks.length === 0 ? (
+            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-2">
+                {(['all', 7, 30] as HistoryWindow[]).map((window) => (
+                  <button
+                    key={window}
+                    type="button"
+                    onClick={() => setHistoryWindow(window)}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                      historyWindow === window
+                        ? 'border-slate-900 bg-slate-900 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
+                    }`}
+                  >
+                    {historyWindowLabel(window)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {[7, 30].map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => handleExport(days as 7 | 30)}
+                    disabled={isExportingWindow !== null}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isExportingWindow === days ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    Export {days}d CSV
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                Showing {historyChecks.length} of {historyTotal} checks
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+                Window: {historyWindowLabel(historyWindow)}
+              </span>
+            </div>
+
+            {historyChecks.length === 0 && !isHistoryLoading ? (
               <EmptyState message="Checks will appear here once the scheduler runs against this monitor." />
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-slate-200">
-                <div className="overflow-x-auto">
+              <div className="space-y-4">
+                <div className="overflow-hidden rounded-2xl border border-slate-200">
+                  <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                       <tr>
@@ -766,7 +888,17 @@ export default function MonitorDetail() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      {checks.slice(0, 20).map((check) => (
+                      {isHistoryLoading ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                            <div className="inline-flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading history...
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        historyChecks.map((check) => (
                         <tr key={check.id}>
                           <td className="px-4 py-3 text-slate-600">{formatDateTime(check.checkedAt)}</td>
                           <td className="px-4 py-3">
@@ -778,10 +910,29 @@ export default function MonitorDetail() {
                             {check.errorMessage || '-'}
                           </td>
                         </tr>
-                      ))}
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
+              </div>
+                {hasNextPage ? (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isFetchingNextPage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      Load more history
+                    </button>
+                  </div>
+                ) : null}
               </div>
             )}
           </Panel>

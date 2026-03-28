@@ -1,4 +1,5 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { CheckService } from './check.service.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 
@@ -14,10 +15,37 @@ export class CheckController {
   async findAll(
     @CurrentUser('id') userId: string,
     @Query('monitorId') monitorId: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+    @Query('days') days?: string,
   ) {
-    return this.checkService.findAllByMonitor(userId, monitorId, limit, offset);
+    return this.checkService.findAllByMonitor(userId, {
+      monitorId,
+      limit: limit ? Number(limit) : undefined,
+      offset: offset ? Number(offset) : undefined,
+      days: days ? Number(days) : undefined,
+    });
+  }
+
+  @Get('export')
+  async exportCsv(
+    @CurrentUser('id') userId: string,
+    @Query('monitorId') monitorId: string,
+    @Query('days') days: string,
+    @Res() response: Response,
+  ) {
+    const parsedDays = Number(days);
+    const csv = await this.checkService.exportChecksCsv(userId, {
+      monitorId,
+      days: parsedDays,
+    });
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="monitor-check-history-${parsedDays}d-${monitorId}.csv"`,
+    );
+    response.send(csv);
   }
 
   /**
