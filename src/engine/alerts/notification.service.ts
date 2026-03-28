@@ -28,6 +28,7 @@ export class NotificationService {
   private resend: Resend | null = null;
   private readonly emailFrom: string | null;
   private readonly slackWebhookUrl: string | null;
+  private readonly fallbackAlertRecipient: string | null;
 
   constructor(private readonly configService: ConfigService) {
     const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -36,6 +37,7 @@ export class NotificationService {
       this.configService.get<string>('NO_REPLY_EMAIL_FROM') ||
       'noreply@zer0friction.in';
     this.slackWebhookUrl = this.configService.get<string>('SLACK_WEBHOOK_URL', '');
+    this.fallbackAlertRecipient = this.configService.get<string>('ADMIN_EMAIL', '').trim() || null;
 
     if (resendApiKey) {
       this.resend = new Resend(resendApiKey);
@@ -276,12 +278,18 @@ export class NotificationService {
     const isTriggered = data.type === 'TRIGGERED';
     const subject = `${isTriggered ? 'Monitor down' : 'Monitor recovered'}: ${data.monitorName}`;
     const accent = isTriggered ? '#dc2626' : '#059669';
+    const recipientEmail = data.metadata?.recipientEmail || this.fallbackAlertRecipient;
     const summary = isTriggered
       ? `${data.monitorName} is reporting failures. Review the latest incident details and investigate the target endpoint.`
       : `${data.monitorName} has recovered and is responding again.`;
 
+    if (!recipientEmail) {
+      this.logger.warn(`Alert ${data.alertId} skipped because no recipient email is configured.`);
+      return;
+    }
+
     await this.sendEmail(
-      data.metadata?.recipientEmail || 'admin@example.com',
+      recipientEmail,
       subject,
       this.buildShell({
         pretitle: 'Monitor alert',
@@ -310,7 +318,7 @@ export class NotificationService {
     );
 
     this.logger.log(
-      `Email sent for alert ${data.alertId} to ${data.metadata?.recipientEmail || 'admin@example.com'}`,
+      `Email sent for alert ${data.alertId} to ${recipientEmail}`,
     );
   }
 
