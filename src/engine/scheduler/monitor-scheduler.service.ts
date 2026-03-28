@@ -25,7 +25,12 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
   private isRunning = false;
 
-  /** How often the scheduler polls for due monitors (ms) */
+  /**
+   * How often the scheduler polls for due monitors (ms).
+   *
+   * Keep this comfortably below the fastest supported monitor interval so
+   * Enterprise 10-second checks are surfaced close to real time.
+   */
   private readonly pollIntervalMs: number;
 
   /** Batch size for fetching due monitors */
@@ -39,7 +44,7 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
   ) {
     this.pollIntervalMs = this.configService.get<number>(
       'MONITOR_SCHEDULER_INTERVAL_MS',
-      30_000,
+      1_000,
     );
   }
 
