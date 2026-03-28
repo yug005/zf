@@ -1,16 +1,35 @@
 {
   "name": "zer0friction-cli",
   "version": "0.1.0",
-  "description": "Terminal interface for Zer0Friction",
+  "description": "A polished terminal cockpit for Zer0Friction monitoring, projects, API keys, and deploy reporting.",
   "license": "UNLICENSED",
+  "homepage": "https://zer0friction.in",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yug005/zf.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/yug005/zf/issues"
+  },
   "type": "module",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "README.md"
   ],
   "bin": {
     "zf": "./bin/zf.js"
   },
+  "keywords": [
+    "zer0friction",
+    "uptime",
+    "monitoring",
+    "devops",
+    "cli",
+    "incident-management",
+    "deploy-tracking"
+  ],
   "engines": {
     "node": ">=22.0.0"
   },

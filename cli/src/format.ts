@@ -11,40 +11,70 @@ const YELLOW = '\u001b[33m';
 const RED = '\u001b[31m';
 const MAGENTA = '\u001b[35m';
 const WHITE = '\u001b[37m';
+const LIGHT_CYAN = '\u001b[96m';
+const LIGHT_BLUE = '\u001b[94m';
+const LIGHT_MAGENTA = '\u001b[95m';
+const GRAY = '\u001b[90m';
 
 export function printBanner(title: string, subtitle?: string): void {
+  const width = 74;
+  const line = '='.repeat(width);
+
   console.log('');
-  console.log(color(`${BOLD}${CYAN}Zer0Friction CLI${RESET}`));
-  console.log(color(`${DIM}${title}${RESET}`));
+  console.log(tint(`+${line}+`, LIGHT_BLUE));
+  console.log(
+    tint('| ', LIGHT_BLUE) +
+      tint('ZER0FRICTION', LIGHT_CYAN) +
+      tint(' // ', LIGHT_MAGENTA) +
+      tint('CLI', WHITE) +
+      tint(padRight('', width - stripAnsi('ZER0FRICTION // CLI').length - 1), LIGHT_BLUE) +
+      tint('|', LIGHT_BLUE),
+  );
+  console.log(
+    tint('| ', LIGHT_BLUE) +
+      tint(title, BOLD + WHITE) +
+      tint(padRight('', width - stripAnsi(title).length - 1), LIGHT_BLUE) +
+      tint('|', LIGHT_BLUE),
+  );
   if (subtitle) {
-    console.log(color(`${DIM}${subtitle}${RESET}`));
+    const wrapped = wrapText(subtitle, width - 2);
+    for (const lineText of wrapped) {
+      console.log(
+        tint('| ', LIGHT_BLUE) +
+          tint(lineText, DIM + CYAN) +
+          tint(padRight('', width - stripAnsi(lineText).length - 1), LIGHT_BLUE) +
+          tint('|', LIGHT_BLUE),
+      );
+    }
   }
+  console.log(tint(`+${line}+`, LIGHT_BLUE));
   console.log('');
 }
 
 export function printSection(title: string): void {
   console.log('');
-  console.log(color(`${BOLD}${WHITE}${title}${RESET}`));
+  console.log(tint(`> ${title}`, BOLD + WHITE));
+  console.log(tint(`  ${'-'.repeat(Math.max(12, title.length + 2))}`, GRAY));
 }
 
 export function printMuted(message: string): void {
-  console.log(color(`${DIM}${message}${RESET}`));
+  console.log(tint(message, DIM + GRAY));
 }
 
 export function printInfo(message: string): void {
-  console.log(color(`${BLUE}i${RESET} ${message}`));
+  console.log(`${tint('i', LIGHT_BLUE)} ${message}`);
 }
 
 export function printSuccess(message: string): void {
-  console.log(color(`${GREEN}OK${RESET} ${message}`));
+  console.log(`${tint('OK', GREEN)} ${tint(message, WHITE)}`);
 }
 
 export function printWarning(message: string): void {
-  console.log(color(`${YELLOW}!${RESET} ${message}`));
+  console.log(`${tint('!!', YELLOW)} ${tint(message, WHITE)}`);
 }
 
 export function printError(message: string): void {
-  console.error(color(`${RED}x${RESET} ${message}`));
+  console.error(`${tint('xx', RED)} ${tint(message, WHITE)}`);
 }
 
 export function printJson(value: unknown): void {
@@ -55,7 +85,18 @@ export function printKeyValue(rows: Array<{ key: string; value: Primitive }>): v
   const width = Math.max(...rows.map((row) => row.key.length), 0);
   for (const row of rows) {
     const label = row.key.padEnd(width, ' ');
-    console.log(`${color(`${DIM}${label}${RESET}`)}  ${normalizeCell(row.value)}`);
+    console.log(`${tint('>', LIGHT_BLUE)} ${tint(label, DIM + CYAN)}  ${normalizeCell(row.value)}`);
+  }
+}
+
+export function printList(items: string[]): void {
+  if (items.length === 0) {
+    printMuted('No items.');
+    return;
+  }
+
+  for (const item of items) {
+    console.log(`${tint('*', LIGHT_MAGENTA)} ${item}`);
   }
 }
 
@@ -73,20 +114,19 @@ export function printTable(rows: TableRow[], columns?: string[]): void {
     ),
   );
 
-  const renderRow = (values: string[]) =>
-    values
-      .map((value, index) => {
-        const rawWidth = stripAnsi(value).length;
-        return value.padEnd(widths[index] + Math.max(0, value.length - rawWidth), ' ');
-      })
-      .join('  ');
+  const top = `+${widths.map((width) => '-'.repeat(width + 2)).join('+')}+`;
+  const divider = `+${widths.map((width) => '-'.repeat(width + 2)).join('+')}+`;
+  const bottom = `+${widths.map((width) => '-'.repeat(width + 2)).join('+')}+`;
 
-  console.log(renderRow(headers.map((header) => color(`${DIM}${header}${RESET}`))));
-  console.log(renderRow(widths.map((width) => color(`${DIM}${'-'.repeat(width)}${RESET}`))));
+  console.log(tint(top, GRAY));
+  console.log(renderTableRow(headers.map((header) => tint(header, BOLD + WHITE)), widths));
+  console.log(tint(divider, GRAY));
 
   for (const row of rows) {
-    console.log(renderRow(headers.map((header) => String(normalizeCell(row[header])))));
+    console.log(renderTableRow(headers.map((header) => String(normalizeCell(row[header]))), widths));
   }
+
+  console.log(tint(bottom, GRAY));
 }
 
 export function formatDate(value: string | null | undefined): string {
@@ -100,16 +140,16 @@ export function formatDate(value: string | null | undefined): string {
 export function formatStatus(status: string): string {
   const normalized = status.toUpperCase();
   if (normalized === 'UP' || normalized === 'SUCCESS' || normalized === 'RESOLVED') {
-    return color(`${GREEN}${normalized}${RESET}`);
+    return tint(normalized, GREEN);
   }
   if (normalized === 'DOWN' || normalized === 'FAILURE' || normalized === 'TRIGGERED') {
-    return color(`${RED}${normalized}${RESET}`);
+    return tint(normalized, RED);
   }
   if (normalized === 'DEGRADED' || normalized === 'ACKNOWLEDGED') {
-    return color(`${YELLOW}${normalized}${RESET}`);
+    return tint(normalized, YELLOW);
   }
   if (normalized === 'PAUSED') {
-    return color(`${MAGENTA}${normalized}${RESET}`);
+    return tint(normalized, LIGHT_MAGENTA);
   }
 
   return status;
@@ -121,12 +161,12 @@ export function formatLatency(value: number | null | undefined): string {
   }
 
   if (value < 200) {
-    return color(`${GREEN}${value}ms${RESET}`);
+    return tint(`${value}ms`, GREEN);
   }
   if (value < 1000) {
-    return color(`${YELLOW}${value}ms${RESET}`);
+    return tint(`${value}ms`, YELLOW);
   }
-  return color(`${RED}${value}ms${RESET}`);
+  return tint(`${value}ms`, RED);
 }
 
 export function formatPercentage(value: number | string | null | undefined): string {
@@ -141,12 +181,17 @@ export function formatPercentage(value: number | string | null | undefined): str
 
   const rendered = `${numeric.toFixed(2)}%`;
   if (numeric >= 99.9) {
-    return color(`${GREEN}${rendered}${RESET}`);
+    return tint(rendered, GREEN);
   }
   if (numeric >= 95) {
-    return color(`${YELLOW}${rendered}${RESET}`);
+    return tint(rendered, YELLOW);
   }
-  return color(`${RED}${rendered}${RESET}`);
+  return tint(rendered, RED);
+}
+
+function renderTableRow(values: string[], widths: number[]): string {
+  const cells = values.map((value, index) => padAnsi(value, widths[index]));
+  return `| ${cells.join(' | ')} |`;
 }
 
 function normalizeCell(value: Primitive): string | number | boolean {
@@ -157,8 +202,49 @@ function normalizeCell(value: Primitive): string | number | boolean {
   return value;
 }
 
-function color(value: string): string {
-  return value;
+function tint(value: string, code: string): string {
+  if (!supportsColor()) {
+    return stripAnsi(value);
+  }
+  return `${code}${value}${RESET}`;
+}
+
+function padAnsi(value: string, width: number): string {
+  const visibleWidth = stripAnsi(value).length;
+  return `${value}${' '.repeat(Math.max(0, width - visibleWidth))}`;
+}
+
+function padRight(value: string, width: number): string {
+  return `${value}${' '.repeat(Math.max(0, width))}`;
+}
+
+function wrapText(value: string, width: number): string[] {
+  const words = value.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (stripAnsi(next).length <= width) {
+      current = next;
+      continue;
+    }
+
+    if (current) {
+      lines.push(current);
+    }
+    current = word;
+  }
+
+  if (current) {
+    lines.push(current);
+  }
+
+  return lines.length > 0 ? lines : [''];
+}
+
+function supportsColor(): boolean {
+  return process.stdout.isTTY && process.env.NO_COLOR === undefined;
 }
 
 function stripAnsi(value: string): string {

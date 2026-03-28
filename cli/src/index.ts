@@ -16,6 +16,7 @@ import {
   formatStatus,
   printBanner,
   printError,
+  printList,
   printJson,
   printKeyValue,
   printMuted,
@@ -814,37 +815,71 @@ async function handleCompletion(action: string | undefined): Promise<void> {
 }
 
 function printHelp(): void {
-  printBanner('Command reference', 'A fast CLI for onboarding, monitoring, and deploy workflows.');
-  console.log(`Usage:
-  zf init [--skip-monitor]
-  zf doctor
-  zf status
-  zf config show|get|set|clear
-  zf auth login --base-url <url> --api-key <key>
-  zf auth whoami
-  zf projects list|create|use|current
-  zf api-keys list|create|revoke
-  zf monitors list|get|checks|create|update|pause|resume|delete
-  zf deploy report
-  zf completion <bash|zsh|fish|powershell>
+  printBanner('Command reference', 'A fast, high-signal terminal cockpit for onboarding, monitoring, and deploy workflows.');
 
-Examples:
-  zf init
-  zf init --skip-monitor
-  zf doctor
-  zf projects use --slug production
-  zf projects create --interactive
-  zf monitors list
-  zf monitors create --interactive
-  zf monitors checks --id <monitor-id> --limit 20
-  zf api-keys create --name "GitHub Actions"
-  zf deploy report --environment production --service api
-  zf completion powershell
+  printSection('Core flow');
+  printList([
+    'zf init [--skip-monitor]',
+    'zf doctor',
+    'zf status',
+    'zf auth whoami',
+  ]);
 
-Global config:
-  Stored at ~/.zer0friction/config.json
-  Env overrides: ZF_BASE_URL, ZF_API_KEY, ZF_PROJECT_ID
-`);
+  printSection('Configuration');
+  printList([
+    'zf config show',
+    'zf config get <base-url|api-key|project-id>',
+    'zf config set <base-url|api-key|project-id> <value>',
+    'zf config clear <base-url|api-key|project-id>',
+  ]);
+
+  printSection('Projects');
+  printList([
+    'zf projects list',
+    'zf projects create --interactive',
+    'zf projects use --id <id>',
+    'zf projects current',
+  ]);
+
+  printSection('Monitors');
+  printList([
+    'zf monitors list',
+    'zf monitors get --id <monitor-id>',
+    'zf monitors checks --id <monitor-id> --limit 20',
+    'zf monitors create --interactive',
+    'zf monitors update --id <monitor-id> [options]',
+    'zf monitors pause --id <monitor-id>',
+    'zf monitors resume --id <monitor-id>',
+    'zf monitors delete --id <monitor-id>',
+  ]);
+
+  printSection('Automation and access');
+  printList([
+    'zf api-keys list',
+    'zf api-keys create --name "GitHub Actions"',
+    'zf api-keys revoke --id <key-id>',
+    'zf deploy report --environment production --service api',
+    'zf completion <bash|zsh|fish|powershell>',
+  ]);
+
+  printSection('Launch examples');
+  printList([
+    'zf init',
+    'zf doctor',
+    'zf projects use --slug production',
+    'zf monitors list',
+    'zf monitors create --interactive',
+    'zf deploy report --environment production --service api',
+  ]);
+
+  printSection('Config');
+  printKeyValue([
+    { key: 'path', value: '~/.zer0friction/config.json' },
+    { key: 'env', value: 'ZF_BASE_URL, ZF_API_KEY, ZF_PROJECT_ID' },
+    { key: 'json mode', value: 'Add --json to machine-readable commands' },
+  ]);
+
+  printMuted('Tip: start with `zf init` for the guided setup, then `zf doctor` to validate the full CLI path.');
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
