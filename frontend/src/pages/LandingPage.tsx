@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { EnterpriseContactForm } from '../components/EnterpriseContactForm';
 import { PageMeta } from '../components/PageMeta';
+import { SeoJsonLd } from '../components/SeoJsonLd';
 
 // --- Static Data ---
 
@@ -120,6 +121,54 @@ const FaqAccordion = ({
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0); // First FAQ open by default
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Zer0Friction',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: 'https://www.zer0friction.in/',
+    description:
+      'Uptime monitoring for websites, APIs, SSL, DNS, incidents, deploy tracking, and status pages.',
+    offers: [
+      {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'INR',
+        name: 'Trial',
+      },
+      {
+        '@type': 'Offer',
+        price: '149',
+        priceCurrency: 'INR',
+        name: 'Lite',
+      },
+      {
+        '@type': 'Offer',
+        price: '499',
+        priceCurrency: 'INR',
+        name: 'Pro',
+      },
+    ],
+    provider: {
+      '@type': 'Organization',
+      name: 'Zer0Friction',
+      url: 'https://www.zer0friction.in/',
+      email: 'yug@zer0friction.in',
+    },
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-primary-100 selection:text-primary-900 overflow-x-hidden">
@@ -128,6 +177,8 @@ export default function LandingPage() {
         description="Monitor websites, APIs, SSL, DNS, incidents, status pages, and deploy health with Zer0Friction's focused uptime platform."
         canonicalPath="/"
       />
+      <SeoJsonLd id="landing-faq" data={faqSchema} />
+      <SeoJsonLd id="landing-product" data={productSchema} />
       
       {/* Navigation Bar */}
       <nav className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 transition-all duration-300">

@@ -1,9 +1,15 @@
 import { Link } from 'react-router-dom';
 import { Activity } from 'lucide-react';
+import { PageMeta } from '../components/PageMeta';
 
 export function Terms() {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Terms of Service | Zer0Friction"
+        description="Read the Zer0Friction terms of service for website monitoring, API monitoring, alerts, and status pages."
+        canonicalPath="/terms"
+      />
       <nav className="border-b border-gray-100 py-4 px-6 fixed top-0 inset-x-0 bg-white z-50">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
           <Activity className="w-6 h-6 text-gray-900" />
@@ -27,6 +33,11 @@ export function Terms() {
 export function Privacy() {
   return (
     <div className="min-h-screen bg-white">
+      <PageMeta
+        title="Privacy Policy | Zer0Friction"
+        description="Read how Zer0Friction handles monitoring data, endpoint data, and account information."
+        canonicalPath="/privacy"
+      />
       <nav className="border-b border-gray-100 py-4 px-6 fixed top-0 inset-x-0 bg-white z-50">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
           <Activity className="w-6 h-6 text-gray-900" />

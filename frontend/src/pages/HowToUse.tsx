@@ -13,6 +13,8 @@ import {
   Zap,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PageMeta } from '../components/PageMeta';
+import { SeoJsonLd } from '../components/SeoJsonLd';
 
 const monitoringFeatures = [
   {
@@ -67,8 +69,31 @@ const apiFeatures = [
 ];
 
 export default function HowToUse() {
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: 'Zer0Friction User Manual',
+    description:
+      'Learn how to set up uptime monitors, response-time alerts, API automation, and incident-friendly workflows in Zer0Friction.',
+    author: {
+      '@type': 'Organization',
+      name: 'Zer0Friction',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Zer0Friction',
+    },
+    url: 'https://www.zer0friction.in/how-to-use',
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <PageMeta
+        title="How To Use Zer0Friction | Website and API Monitoring Guide"
+        description="Learn how to set up API monitoring, uptime alerts, response-time checks, and automation workflows in Zer0Friction."
+        canonicalPath="/how-to-use"
+      />
+      <SeoJsonLd id="how-to-use" data={articleSchema} />
       <section className="relative overflow-hidden border-b border-slate-200 bg-white px-4 pb-16 pt-14 sm:px-6 lg:px-8 lg:pb-20">
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <Zap className="absolute -left-20 -top-24 h-80 w-80 rotate-12 text-emerald-500" />
