@@ -17,6 +17,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { EnterpriseContactForm } from '../components/EnterpriseContactForm';
+import { PageMeta } from '../components/PageMeta';
 
 // --- Static Data ---
 
@@ -122,6 +123,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-primary-100 selection:text-primary-900 overflow-x-hidden">
+      <PageMeta
+        title="Zer0Friction | Uptime Monitoring for Websites, APIs, SSL, DNS, and Status Pages"
+        description="Monitor websites, APIs, SSL, DNS, incidents, status pages, and deploy health with Zer0Friction's focused uptime platform."
+        canonicalPath="/"
+      />
       
       {/* Navigation Bar */}
       <nav className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 transition-all duration-300">

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, ShieldCheck, Eye, EyeOff, Github, Mail } from 'lucide-react';
 import { axiosPublic, getOAuthUrl } from '../services/api';
+import { PageMeta } from '../components/PageMeta';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -55,6 +56,11 @@ export default function Login() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <PageMeta
+        title="Sign In | Zer0Friction"
+        description="Sign in to Zer0Friction to manage your infrastructure monitors and incident workflows."
+        noIndex
+      />
       <div className="text-center">
         <div className="mb-6 flex justify-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 shadow-lg shadow-primary-500/30 transition-transform hover:rotate-3">
@@ -198,15 +204,8 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="flex items-center">
-          <input
-            id="remember-me"
-            type="checkbox"
-            className="h-4 w-4 rounded-md border-slate-300 text-primary-600 focus:ring-primary-500"
-          />
-          <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 dark:text-slate-300">
-            Remember this device
-          </label>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+          Sessions are kept on this browser automatically when cookies are allowed.
         </div>
 
         <button

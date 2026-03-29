@@ -8,6 +8,7 @@ import { NotificationBell } from '../components/NotificationBell';
 import { fetchCurrentUser } from '../services/current-user';
 import { QuickStartCard } from '../components/QuickStartCard';
 import { logoutSession } from '../services/api';
+import { PageMeta } from '../components/PageMeta';
 
 // Lightweight alternative to clsx/tailwind-merge for simple templates
 function classNames(...classes: (string | undefined | null | false)[]) {
@@ -51,6 +52,21 @@ export default function DashboardLayout() {
     { title: 'API Keys', path: '/api-keys', icon: Key },
   ];
 
+  const pageTitles: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/monitors': 'Monitors',
+    '/changes': 'Changes',
+    '/incidents': 'Incidents',
+    '/status-pages': 'Status Pages',
+    '/billing': 'Billing',
+    '/api-keys': 'API Keys',
+    '/expired': 'Access Expired',
+  };
+
+  const activeTitle = location.pathname.startsWith('/monitors/')
+    ? 'Monitor Details'
+    : pageTitles[location.pathname] || 'Dashboard';
+
   if (isUserLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#080c14]">
@@ -74,6 +90,11 @@ export default function DashboardLayout() {
 
   return (
     <div className="relative min-h-screen bg-slate-50 transition-colors duration-200 dark:bg-[#080c14] overflow-hidden text-slate-900 dark:text-slate-100 font-sans">
+      <PageMeta
+        title={`${activeTitle} | Zer0Friction`}
+        description="Manage monitors, incidents, deploy changes, alerts, and status pages inside Zer0Friction."
+        noIndex
+      />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-emerald-400/10 blur-[120px] dark:bg-emerald-900/20" />
         <div className="absolute bottom-[20%] right-[10%] h-[30%] w-[30%] rounded-full bg-blue-400/10 blur-[120px] dark:bg-blue-900/20" />

@@ -13,6 +13,7 @@ import {
   RefreshCcw,
 } from 'lucide-react';
 import { axiosPublic, getOAuthUrl } from '../services/api';
+import { PageMeta } from '../components/PageMeta';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -69,6 +70,11 @@ export default function Register() {
   if (isSuccess) {
     return (
       <div className="space-y-6 text-center animate-in fade-in zoom-in duration-300">
+        <PageMeta
+          title="Verify Your Email | Zer0Friction"
+          description="Verify your email address to activate your Zer0Friction account."
+          noIndex
+        />
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 shadow-inner">
           <Mail className="h-8 w-8 text-green-600" />
         </div>
@@ -118,6 +124,11 @@ export default function Register() {
 
   return (
     <div className="space-y-6">
+      <PageMeta
+        title="Create Account | Zer0Friction"
+        description="Create your Zer0Friction account and start a trial for uptime monitoring, status pages, and incident tracking."
+        noIndex
+      />
       <div className="text-center">
         <Activity className="mx-auto h-12 w-12 animate-pulse text-primary-600" />
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">

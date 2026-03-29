@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { fetchPublicStatusPage } from '../services/status-pages';
+import { PageMeta } from '../components/PageMeta';
 
 export default function PublicStatusPage() {
   const { slug } = useParams();
@@ -12,14 +13,19 @@ export default function PublicStatusPage() {
     refetchInterval: 30000,
   });
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;
-  if (isError || !data) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 "><h1 className="text-2xl font-bold mb-2">Page Not Found</h1><p className="text-slate-500">The status page you are looking for does not exist.</p></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><PageMeta title="Loading Status Page | Zer0Friction" noIndex /><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;
+  if (isError || !data) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 "><PageMeta title="Status Page Not Found | Zer0Friction" noIndex /><h1 className="text-2xl font-bold mb-2">Page Not Found</h1><p className="text-slate-500">The status page you are looking for does not exist.</p></div>;
 
   const isAllUp = data.overallStatus === 'UP';
   const headerBg = isAllUp ? 'bg-emerald-500' : (data.overallStatus === 'DOWN' ? 'bg-red-500' : 'bg-amber-500');
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
+      <PageMeta
+        title={`${data.name} Status | Zer0Friction`}
+        description={`Live service status for ${data.name} powered by Zer0Friction.`}
+        canonicalPath={`/status/${slug}`}
+      />
       <div className={`${headerBg} h-2 w-full`} />
       <div className="max-w-3xl mx-auto pt-16 px-6">
         <div className="mb-12 text-center">

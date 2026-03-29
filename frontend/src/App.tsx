@@ -1,7 +1,9 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { ThemeProvider } from './components/ThemeProvider';
+import { fetchCurrentUser } from './services/current-user';
+import { PageMeta } from './components/PageMeta';
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
 const AuthLayout = lazy(() => import('./layouts/AuthLayout'));
@@ -46,6 +48,58 @@ function RouteFallback() {
   );
 }
 
+function RootRoute() {
+  const { data: currentUser, isLoading } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: fetchCurrentUser,
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  if (isLoading) {
+    return <RouteFallback />;
+  }
+
+  if (currentUser) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <LandingPage />;
+}
+
+function NotFoundPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+      <PageMeta
+        title="Page Not Found | Zer0Friction"
+        description="The page you requested could not be found on Zer0Friction."
+        noIndex
+      />
+      <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">404</p>
+        <h1 className="mt-4 text-3xl font-semibold text-slate-900">This page does not exist</h1>
+        <p className="mt-3 text-sm text-slate-500">
+          Try the dashboard if you are signed in, or head back to the Zer0Friction homepage.
+        </p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <a
+            href="/"
+            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            Go home
+          </a>
+          <a
+            href="/dashboard"
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Open dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
@@ -53,7 +107,7 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/" element={<RootRoute />} />
               <Route path="/status/:slug" element={<PublicStatusPage />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
@@ -80,7 +134,7 @@ export default function App() {
                 <Route path="/expired" element={<ExpiredState />} />
               </Route>
 
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>
