@@ -23,6 +23,8 @@ export interface CurrentUser {
 }
 
 export async function fetchCurrentUser(): Promise<CurrentUser> {
-  const { data } = await axiosPrivate.get<CurrentUser>('/users/me');
+  const { data } = await axiosPrivate.get<CurrentUser>('/users/me', {
+    skipAuthRedirect: true,
+  } as never);
   return data;
 }
