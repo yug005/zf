@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { axiosPublic, getOAuthUrl } from '../services/api';
 import { PageMeta } from '../components/PageMeta';
+import { BrandLogo } from '../components/BrandLogo';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -130,7 +131,9 @@ export default function Register() {
         noIndex
       />
       <div className="text-center">
-        <Activity className="mx-auto h-12 w-12 animate-pulse text-primary-600" />
+        <div className="flex justify-center">
+          <BrandLogo compact />
+        </div>
         <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
           Start monitoring today
         </h2>

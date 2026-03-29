@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, AlertCircle, ShieldCheck, Eye, EyeOff, Github, Mail } from 'lucide-react';
+import { Loader2, AlertCircle, Eye, EyeOff, Github, Mail } from 'lucide-react';
 import { axiosPublic, getOAuthUrl } from '../services/api';
 import { PageMeta } from '../components/PageMeta';
+import { BrandLogo } from '../components/BrandLogo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -63,9 +64,7 @@ export default function Login() {
       />
       <div className="text-center">
         <div className="mb-6 flex justify-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 shadow-lg shadow-primary-500/30 transition-transform hover:rotate-3">
-            <ShieldCheck className="h-8 w-8 text-white" />
-          </div>
+          <BrandLogo compact />
         </div>
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           Welcome Back

@@ -19,6 +19,7 @@ import {
 import { EnterpriseContactForm } from '../components/EnterpriseContactForm';
 import { PageMeta } from '../components/PageMeta';
 import { SeoJsonLd } from '../components/SeoJsonLd';
+import { BrandLogo } from '../components/BrandLogo';
 
 // --- Static Data ---
 
@@ -184,8 +185,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="w-6 h-6 text-gray-900" />
-            <span className="text-xl font-bold tracking-tight">Zer0Friction</span>
+            <BrandLogo />
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
@@ -527,8 +527,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
             <div className="col-span-2">
               <div className="flex items-center gap-2 mb-6">
-                <Activity className="w-6 h-6 text-gray-900" />
-                <span className="text-xl font-bold tracking-tight text-gray-900">Zer0Friction</span>
+                <BrandLogo />
               </div>
               <p className="text-gray-500 mb-8 max-w-xs leading-relaxed">
                 Platform-independent uptime monitoring resolving massive infrastructure complexity natively for scale.

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Activity } from 'lucide-react';
 import { PageMeta } from '../components/PageMeta';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function Terms() {
   return (
@@ -12,8 +12,9 @@ export function Terms() {
       />
       <nav className="border-b border-gray-100 py-4 px-6 fixed top-0 inset-x-0 bg-white z-50">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
-          <Activity className="w-6 h-6 text-gray-900" />
-          <Link to="/" className="font-bold tracking-tight text-gray-900 text-xl hover:opacity-80 transition-opacity">Zer0Friction</Link>
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <BrandLogo />
+          </Link>
         </div>
       </nav>
       <main className="max-w-3xl mx-auto px-6 py-32 text-gray-600 space-y-8 leading-relaxed">
@@ -40,8 +41,9 @@ export function Privacy() {
       />
       <nav className="border-b border-gray-100 py-4 px-6 fixed top-0 inset-x-0 bg-white z-50">
         <div className="max-w-7xl mx-auto flex items-center gap-2">
-          <Activity className="w-6 h-6 text-gray-900" />
-          <Link to="/" className="font-bold tracking-tight text-gray-900 text-xl hover:opacity-80 transition-opacity">Zer0Friction</Link>
+          <Link to="/" className="hover:opacity-80 transition-opacity">
+            <BrandLogo />
+          </Link>
         </div>
       </nav>
       <main className="max-w-3xl mx-auto px-6 py-32 text-gray-600 space-y-8 leading-relaxed">

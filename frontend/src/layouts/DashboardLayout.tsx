@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Activity, CreditCard, Key, LogOut, Globe, ShieldAlert, GitBranch, Menu, X, Hexagon } from 'lucide-react';
+import { LayoutDashboard, Activity, CreditCard, Key, LogOut, Globe, ShieldAlert, GitBranch, Menu, X } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ModeToggle } from '../components/ModeToggle';
@@ -9,6 +9,7 @@ import { fetchCurrentUser } from '../services/current-user';
 import { QuickStartCard } from '../components/QuickStartCard';
 import { logoutSession } from '../services/api';
 import { PageMeta } from '../components/PageMeta';
+import { BrandLogo } from '../components/BrandLogo';
 
 // Lightweight alternative to clsx/tailwind-merge for simple templates
 function classNames(...classes: (string | undefined | null | false)[]) {
@@ -119,10 +120,7 @@ export default function DashboardLayout() {
         <div className="h-20 flex items-center px-8">
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/30">
-                <Hexagon className="h-6 w-6 fill-white/20" />
-              </div>
-              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-br from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Zer0Friction</h1>
+              <BrandLogo theme="dark" />
             </div>
             <button
               type="button"
