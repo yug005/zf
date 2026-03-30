@@ -21,6 +21,7 @@ const WebsiteMonitoring = lazy(() => import('./pages/WebsiteMonitoring'));
 const ApiMonitoring = lazy(() => import('./pages/ApiMonitoring'));
 const StatusPagesFeature = lazy(() => import('./pages/StatusPagesFeature'));
 const SslMonitoring = lazy(() => import('./pages/SslMonitoring'));
+const ApiMonitoringTools = lazy(() => import('./pages/ApiMonitoringTools'));
 const VsUptimeRobot = lazy(() => import('./pages/VsUptimeRobot'));
 const VsGrafana = lazy(() => import('./pages/VsGrafana'));
 const VsBetterStack = lazy(() => import('./pages/VsBetterStack'));
@@ -124,6 +125,7 @@ export default function App() {
               <Route path="/api-monitoring" element={<ApiMonitoring />} />
               <Route path="/status-pages-feature" element={<StatusPagesFeature />} />
               <Route path="/ssl-monitoring" element={<SslMonitoring />} />
+              <Route path="/api-monitoring-tools" element={<ApiMonitoringTools />} />
               <Route path="/vs-uptimerobot" element={<VsUptimeRobot />} />
               <Route path="/vs-grafana" element={<VsGrafana />} />
               <Route path="/vs-better-stack" element={<VsBetterStack />} />
