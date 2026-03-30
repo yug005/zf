@@ -43,6 +43,122 @@ const plans = [
   },
 ];
 
+const competitorPricing = [
+  {
+    name: 'Zer0Friction',
+    category: 'Focused uptime platform',
+    entryPrice: 'INR 149/mo',
+    pricingModel: 'Flat tiered pricing',
+    snapshot: 'Trial free, Lite INR 149, Pro INR 499, Business INR 1499, Enterprise custom.',
+    bestFor: 'Teams that want a low-friction entry point with dashboard, API, CLI, and status workflows together.',
+    standout: true,
+  },
+  {
+    name: 'UptimeRobot',
+    category: 'Simple uptime monitoring',
+    entryPrice: '$8/mo annual',
+    pricingModel: 'Tiered SaaS pricing',
+    snapshot: 'Free plan, Solo starts at $8/mo annually, Team $34/mo annually, Enterprise starts at $64/mo annually.',
+    bestFor: 'Teams that want straightforward uptime checks and basic collaboration.',
+  },
+  {
+    name: 'StatusCake',
+    category: 'Uptime + page speed',
+    entryPrice: '$20.41/mo',
+    pricingModel: 'Tiered SaaS pricing',
+    snapshot: 'Free plan, Superior starts at $20.41/mo, Business starts at $66.66/mo, Enterprise custom.',
+    bestFor: 'Teams that want uptime plus page speed checks and more mature reporting.',
+  },
+  {
+    name: 'Better Stack',
+    category: 'Monitoring + incident stack',
+    entryPrice: '$34/mo',
+    pricingModel: 'Modular platform pricing',
+    snapshot: 'Free personal tier, Responder starts at $34/mo monthly or $29/mo annually, then add-ons and extra modules stack up.',
+    bestFor: 'Teams that want uptime monitoring bundled with incident, on-call, and status products.',
+  },
+  {
+    name: 'Checkly',
+    category: 'Developer-first synthetics',
+    entryPrice: '$24/mo',
+    pricingModel: 'Platform pricing plus usage',
+    snapshot: 'Hobby free, Starter $24/mo annually, Team $64/mo annually, Enterprise custom.',
+    bestFor: 'Teams that want synthetic monitoring, Playwright checks, and monitoring-as-code workflows.',
+  },
+  {
+    name: 'Grafana Cloud',
+    category: 'Broad observability platform',
+    entryPrice: '$19/mo platform fee',
+    pricingModel: 'Platform fee plus usage-based',
+    snapshot: 'Free tier available, Pro starts at $19/mo, then synthetics are usage-based at $5 per 10k API tests.',
+    bestFor: 'Teams already buying into a larger observability stack and usage-based pricing.',
+  },
+  {
+    name: 'Datadog',
+    category: 'Enterprise observability',
+    entryPrice: '$5 per 10k API tests',
+    pricingModel: 'Pure usage-based pricing',
+    snapshot: 'Synthetic API tests are $5 per 10k runs annually, $6 month-to-month, and browser tests are $12 per 1k annually.',
+    bestFor: 'Large teams comfortable with usage billing and broader platform spend.',
+  },
+  {
+    name: 'New Relic',
+    category: 'Usage-based observability',
+    entryPrice: '$10/user + usage',
+    pricingModel: 'User or compute pricing plus synthetic overage',
+    snapshot: 'Free includes 500 synthetic checks, full platform users start at $10/user, and extra synthetic checks are billed at $0.005 each.',
+    bestFor: 'Teams already using New Relic across the stack and comfortable with ingest-based cost models.',
+  },
+  {
+    name: 'Dynatrace',
+    category: 'Enterprise observability',
+    entryPrice: '$0.001/request',
+    pricingModel: 'Usage-based synthetic pricing',
+    snapshot: 'HTTP monitors are listed at $0.001 per synthetic request on the public rate card.',
+    bestFor: 'Enterprises buying into Dynatrace for full-stack monitoring and automation.',
+  },
+  {
+    name: 'Postman',
+    category: 'API development platform',
+    entryPrice: '$9/user + monitoring add-on',
+    pricingModel: 'Per-user plus usage-based monitoring',
+    snapshot: 'Solo starts at $9/user monthly billed annually, and monitoring is listed at $20 per 50,000 requests per team per month on paid plans.',
+    bestFor: 'API teams that already live in Postman and want scheduled API test execution.',
+  },
+  {
+    name: 'Pingdom',
+    category: 'Website monitoring',
+    entryPrice: 'Calculator / quote-led',
+    pricingModel: 'Configurable package pricing',
+    snapshot: 'Public pricing is calculator-driven and not as transparent in a simple flat table as some competitors.',
+    bestFor: 'Teams focused on website and transaction monitoring that are comfortable working through a calculator or sales flow.',
+  },
+  {
+    name: 'Prometheus',
+    category: 'Open-source monitoring',
+    entryPrice: '$0 software cost',
+    pricingModel: 'Self-hosted infrastructure cost',
+    snapshot: 'Open source and self-hosted, so you pay for infrastructure, storage, and the team time to run it.',
+    bestFor: 'Teams that want to build and operate their own monitoring stack.',
+  },
+  {
+    name: 'Elastic',
+    category: 'Search + observability platform',
+    entryPrice: 'Resource-based / custom',
+    pricingModel: 'Elastic Cloud resource pricing',
+    snapshot: 'Public pricing is resource-based rather than a simple monitor-plan table, and managed synthetics add extra charges.',
+    bestFor: 'Teams already committed to Elastic for logs, search, and observability workloads.',
+  },
+  {
+    name: 'Atatus',
+    category: 'APM + observability',
+    entryPrice: 'Custom pricing',
+    pricingModel: 'Request-volume based',
+    snapshot: 'Atatus publicly describes custom pricing based on request volume and monitoring needs instead of a simple entry plan.',
+    bestFor: 'Teams prioritizing APM and request-volume-based observability pricing.',
+  },
+];
+
 export default function PricingPage() {
   const pricingComparisons = [
     {
@@ -187,6 +303,64 @@ export default function PricingPage() {
               </Link>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="border-y border-slate-200 bg-white px-6 py-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Pricing comparison</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              Public pricing snapshot across the monitoring tools teams compare most often
+            </h2>
+            <p className="mt-5 text-sm leading-7 text-slate-600">
+              Snapshot updated March 30, 2026 from public pricing pages. Some vendors use usage-based
+              billing, calculators, or custom quotes, so this section focuses on the clearest public
+              entry point and pricing model each tool presents.
+            </p>
+          </div>
+
+          <div className="mt-10 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+            <div className="hidden grid-cols-[1.05fr_0.9fr_0.95fr_1.1fr_1.2fr] border-b border-slate-200 bg-slate-950 text-sm font-bold text-white lg:grid">
+              <div className="px-6 py-5">Tool</div>
+              <div className="px-6 py-5">Public entry</div>
+              <div className="px-6 py-5">Pricing model</div>
+              <div className="px-6 py-5">Snapshot</div>
+              <div className="px-6 py-5">Best fit</div>
+            </div>
+
+            {competitorPricing.map((item, index) => (
+              <div
+                key={item.name}
+                className={`grid gap-4 border-b border-slate-200 px-6 py-6 lg:grid-cols-[1.05fr_0.9fr_0.95fr_1.1fr_1.2fr] ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'
+                } ${item.standout ? 'ring-2 ring-emerald-500/40 ring-inset' : ''}`}
+              >
+                <div>
+                  <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    {item.category}
+                  </div>
+                  <h3 className="mt-3 text-xl font-black tracking-tight text-slate-950">{item.name}</h3>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 lg:hidden">Public entry</p>
+                  <p className="text-sm font-semibold text-slate-900">{item.entryPrice}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 lg:hidden">Pricing model</p>
+                  <p className="text-sm leading-7 text-slate-700">{item.pricingModel}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 lg:hidden">Snapshot</p>
+                  <p className="text-sm leading-7 text-slate-700">{item.snapshot}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 lg:hidden">Best fit</p>
+                  <p className="text-sm leading-7 text-slate-700">{item.bestFor}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
