@@ -17,6 +17,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const AuthSuccess = lazy(() => import('./pages/AuthSuccess'));
 const HowToUse = lazy(() => import('./pages/HowToUse'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
 const WebsiteMonitoring = lazy(() => import('./pages/WebsiteMonitoring'));
 const ApiMonitoring = lazy(() => import('./pages/ApiMonitoring'));
 const StatusPagesFeature = lazy(() => import('./pages/StatusPagesFeature'));
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/how-to-use" element={<HowToUse />} />
+              <Route path="/pricing" element={<PricingPage />} />
               <Route path="/website-monitoring" element={<WebsiteMonitoring />} />
               <Route path="/api-monitoring" element={<ApiMonitoring />} />
               <Route path="/status-pages-feature" element={<StatusPagesFeature />} />

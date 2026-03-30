@@ -17,6 +17,7 @@ type ComparisonPageProps = {
     competitor: string;
   }>;
   summary: string[];
+  whyChooseZer0Friction?: string[];
 };
 
 export function ComparisonPage({
@@ -28,6 +29,12 @@ export function ComparisonPage({
   heroDescription,
   rows,
   summary,
+  whyChooseZer0Friction = [
+    'Faster to understand and adopt than broader monitoring platforms.',
+    'Clear INR pricing and simpler plan boundaries for growing teams.',
+    'Built around uptime, incidents, changes, and status pages instead of platform sprawl.',
+    'A better fit when your team wants a focused reliability workflow instead of an all-purpose observability stack.',
+  ],
 }: ComparisonPageProps) {
   const schema = {
     '@context': 'https://schema.org',
@@ -122,6 +129,25 @@ export function ComparisonPage({
               <p className="text-sm leading-7 text-slate-700">{item}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-slate-50 px-6 py-16">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-3xl font-black tracking-tight text-slate-950">
+            Why teams shortlist Zer0Friction
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {whyChooseZer0Friction.map((item) => (
+              <div
+                key={item}
+                className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5"
+              >
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                <p className="text-sm leading-7 text-slate-700">{item}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

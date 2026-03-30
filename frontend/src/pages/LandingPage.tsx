@@ -576,7 +576,7 @@ export default function LandingPage() {
                 <li><Link to="/ssl-monitoring" className="hover:text-gray-900 transition-colors">SSL Monitoring</Link></li>
                 <li><Link to="/status-pages-feature" className="hover:text-gray-900 transition-colors">Status Pages</Link></li>
                 <li><a href="#features" className="hover:text-gray-900 transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing Options</a></li>
+                <li><Link to="/pricing" className="hover:text-gray-900 transition-colors">Pricing</Link></li>
                 <li><Link to="/login" className="hover:text-gray-900 transition-colors">Dashboard Login</Link></li>
               </ul>
             </div>
