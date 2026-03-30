@@ -21,6 +21,10 @@ const WebsiteMonitoring = lazy(() => import('./pages/WebsiteMonitoring'));
 const ApiMonitoring = lazy(() => import('./pages/ApiMonitoring'));
 const StatusPagesFeature = lazy(() => import('./pages/StatusPagesFeature'));
 const SslMonitoring = lazy(() => import('./pages/SslMonitoring'));
+const VsUptimeRobot = lazy(() => import('./pages/VsUptimeRobot'));
+const VsGrafana = lazy(() => import('./pages/VsGrafana'));
+const VsBetterStack = lazy(() => import('./pages/VsBetterStack'));
+const VsPingdom = lazy(() => import('./pages/VsPingdom'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Changes = lazy(() => import('./pages/Changes'));
 const Incidents = lazy(() => import('./pages/Incidents'));
@@ -120,6 +124,10 @@ export default function App() {
               <Route path="/api-monitoring" element={<ApiMonitoring />} />
               <Route path="/status-pages-feature" element={<StatusPagesFeature />} />
               <Route path="/ssl-monitoring" element={<SslMonitoring />} />
+              <Route path="/vs-uptimerobot" element={<VsUptimeRobot />} />
+              <Route path="/vs-grafana" element={<VsGrafana />} />
+              <Route path="/vs-better-stack" element={<VsBetterStack />} />
+              <Route path="/vs-pingdom" element={<VsPingdom />} />
 
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />

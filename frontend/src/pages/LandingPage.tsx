@@ -583,6 +583,10 @@ export default function LandingPage() {
             <div>
               <h3 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-xs">Company</h3>
               <ul className="space-y-4 text-gray-500 font-medium text-sm">
+                <li><Link to="/vs-uptimerobot" className="hover:text-gray-900 transition-colors">vs UptimeRobot</Link></li>
+                <li><Link to="/vs-grafana" className="hover:text-gray-900 transition-colors">vs Grafana</Link></li>
+                <li><Link to="/vs-better-stack" className="hover:text-gray-900 transition-colors">vs Better Stack</Link></li>
+                <li><Link to="/vs-pingdom" className="hover:text-gray-900 transition-colors">vs Pingdom</Link></li>
                 <li><a href="https://github.com/yug005" target="_blank" rel="noreferrer" className="hover:text-gray-900 transition-colors">About the Founder</a></li>
                 <li><a href="#" className="hover:text-gray-900 transition-colors">System Status</a></li>
                 <li><a href="mailto:yug@zer0friction.in" className="hover:text-gray-900 transition-colors">Contact Support</a></li>
