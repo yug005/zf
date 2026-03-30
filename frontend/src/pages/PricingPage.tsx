@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Terminal, Zap } from 'lucide-react';
 import { BrandLogo } from '../components/BrandLogo';
 import { PageMeta } from '../components/PageMeta';
 import { SeoJsonLd } from '../components/SeoJsonLd';
@@ -44,6 +44,29 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const pricingComparisons = [
+    {
+      title: 'Cheaper starting point',
+      detail:
+        'Zer0Friction starts with a low-friction INR entry plan so smaller teams can pay for uptime coverage earlier instead of waiting for bigger observability budgets.',
+    },
+    {
+      title: 'Faster buying decision',
+      detail:
+        'Monitor limits, API keys, and interval tiers are easy to understand without decoding a larger platform pricing model.',
+    },
+    {
+      title: 'CLI + dashboard + API',
+      detail:
+        'The pricing covers more than a web dashboard. Teams can use the npm CLI, API keys, user manual, and the app together in one workflow.',
+    },
+    {
+      title: 'Focused reliability surface',
+      detail:
+        'Zer0Friction is priced like a tighter uptime and incident product instead of a sprawling observability suite.',
+    },
+  ];
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -114,6 +137,13 @@ export default function PricingPage() {
             >
               Compare Alternatives
             </Link>
+            <Link
+              to="/cli"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-6 py-4 text-sm font-semibold text-slate-700 hover:bg-white"
+            >
+              Explore CLI
+              <Terminal className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -164,16 +194,60 @@ export default function PricingPage() {
         <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-black tracking-tight text-slate-950">Why the pricing is designed this way</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {[
-              'Cheaper entry pricing matters when small teams need uptime monitoring without enterprise overhead.',
-              'Fast onboarding matters more than sprawling dashboards for many product teams.',
-              'Monitoring, incidents, changes, and status pages belong in one workflow for faster action.',
-              'Clear monitor and API key limits are easier to understand than platform-style usage complexity.',
-            ].map((item) => (
-              <div key={item} className="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-700">
-                {item}
+            {pricingComparisons.map((item) => (
+              <div key={item.title} className="rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="text-base font-bold text-slate-950">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-700">
+                  {item.detail}
+                </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 py-16">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_1fr]">
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/20">
+              <Terminal className="h-5 w-5" />
+            </div>
+            <h2 className="mt-6 text-3xl font-black tracking-tight text-slate-950">
+              Your plan includes more than the dashboard
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Zer0Friction pricing also supports teams that prefer terminal and automation workflows.
+              Install the CLI from npm, use API keys in scripts, and keep the user manual close for teammate onboarding.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/cli" className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white">
+                View CLI
+              </Link>
+              <Link to="/how-to-use" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-900">
+                Open user manual
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Pricing comparisons</p>
+            <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950">
+              Compare pricing and workflow fit directly
+            </h2>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/vs-uptimerobot" className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900">
+                vs UptimeRobot
+              </Link>
+              <Link to="/vs-grafana" className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900">
+                vs Grafana
+              </Link>
+              <Link to="/vs-better-stack" className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900">
+                vs Better Stack
+              </Link>
+              <Link to="/vs-pingdom" className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900">
+                vs Pingdom
+              </Link>
+            </div>
           </div>
         </div>
       </section>

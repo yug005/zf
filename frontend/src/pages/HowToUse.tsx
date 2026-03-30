@@ -68,6 +68,13 @@ const apiFeatures = [
   },
 ];
 
+const cliFeatures = [
+  'Install globally from npm with `npm install -g zer0friction-cli`.',
+  'Use `zf init` for guided setup and first-time onboarding.',
+  'Run `zf doctor` to verify configuration and environment quickly.',
+  'Create and list monitors from the terminal for repeatable workflows.',
+];
+
 export default function HowToUse() {
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -121,6 +128,12 @@ export default function HowToUse() {
               className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             >
               API + Automation
+            </a>
+            <a
+              href="#cli"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              CLI Workflow
             </a>
           </div>
         </div>
@@ -295,6 +308,68 @@ curl -X POST $BACKEND_URL/api/v1/monitors \\
   "intervalSeconds": 60,
   "timeoutMs": 5000
 }`}</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="cli" className="px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <p className="inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-700">
+              CLI Workflow
+            </p>
+            <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+              Work from the terminal when the dashboard is not enough
+            </h2>
+            <p className="mt-4 text-slate-600">
+              Zer0Friction also ships with a public npm CLI, so your team is not limited to the browser.
+              Use it for faster setup, repeatable onboarding, and script-friendly monitor creation.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              {cliFeatures.map((feature) => (
+                <div key={feature} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <p className="text-sm leading-7 text-slate-700">{feature}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                to="/cli"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Open CLI page
+              </Link>
+              <a
+                href="https://www.npmjs.com/package/zer0friction-cli"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                View on npm
+              </a>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-2xl">
+            <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
+              <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-3">
+                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+                <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
+                <span className="ml-3 text-[10px] uppercase tracking-widest text-slate-400">
+                  Zer0Friction CLI
+                </span>
+              </div>
+              <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-200 sm:text-sm">{`npm install -g zer0friction-cli
+
+zf doctor
+zf init
+zf monitors create --interactive
+zf monitors list`}</pre>
             </div>
           </div>
         </div>

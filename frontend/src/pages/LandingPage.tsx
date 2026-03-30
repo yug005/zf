@@ -17,7 +17,8 @@ import {
   HelpCircle,
   Search,
   Scale,
-  FileText
+  FileText,
+  Terminal
 } from 'lucide-react';
 import { EnterpriseContactForm } from '../components/EnterpriseContactForm';
 import { PageMeta } from '../components/PageMeta';
@@ -134,6 +135,13 @@ const EXPLORE_PAGES = [
     to: '/vs-grafana',
     icon: Scale,
     badge: 'Compare',
+  },
+  {
+    title: 'CLI for npm',
+    description: 'Install Zer0Friction from npm, bootstrap projects, and create monitors from the terminal.',
+    to: '/cli',
+    icon: Terminal,
+    badge: 'CLI',
   },
 ];
 
@@ -261,6 +269,7 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
             <Link to="/pricing" className="hover:text-gray-900 transition-colors">Pricing</Link>
+            <Link to="/cli" className="hover:text-gray-900 transition-colors">CLI</Link>
             <a href="#explore" className="hover:text-gray-900 transition-colors">Compare</a>
             <a href="#how-to" className="hover:text-gray-900 transition-colors">How it Works</a>
             <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
@@ -313,6 +322,9 @@ export default function LandingPage() {
               <Link to="/vs-grafana" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:border-gray-300 hover:text-gray-900">
                 vs Grafana
               </Link>
+              <Link to="/cli" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:border-gray-300 hover:text-gray-900">
+                CLI for npm
+              </Link>
             </div>
           </div>
         </section>
@@ -362,7 +374,8 @@ export default function LandingPage() {
                   {[
                     'Sub-second polling intervals across global edges.',
                     'Direct Resend email integrations and Slack webhook support.',
-                    'Fell-swoop setup. Point us at a URL, and we handle the rest.'
+                    'Fell-swoop setup. Point us at a URL, and we handle the rest.',
+                    'CLI and API workflows for teams that prefer shipping from the terminal.'
                   ].map((item, i) => (
                     <li key={i} className="flex items-start">
                       <CheckCircle className="w-6 h-6 text-green-500 mr-3 shrink-0" />
@@ -592,9 +605,14 @@ export default function LandingPage() {
                  </div>
 
                  <div className="pt-8">
-                    <Link to="/how-to-use" className="inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all hover:translate-x-1 group">
-                       Explore Detailed User Manual <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                    <div className="flex flex-wrap gap-3">
+                      <Link to="/how-to-use" className="inline-flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black hover:bg-slate-800 transition-all hover:translate-x-1 group">
+                         Explore Detailed User Manual <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                      <Link to="/cli" className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-8 py-4 font-black text-slate-900 transition-all hover:-translate-y-0.5 hover:bg-slate-50">
+                         Explore Zer0Friction CLI
+                      </Link>
+                    </div>
                  </div>
               </div>
 
@@ -689,6 +707,8 @@ export default function LandingPage() {
                 <li><Link to="/status-pages-feature" className="hover:text-gray-900 transition-colors">Status Pages</Link></li>
                 <li><a href="#features" className="hover:text-gray-900 transition-colors">Features</a></li>
                 <li><Link to="/pricing" className="hover:text-gray-900 transition-colors">Pricing</Link></li>
+                <li><Link to="/cli" className="hover:text-gray-900 transition-colors">CLI for npm</Link></li>
+                <li><Link to="/how-to-use" className="hover:text-gray-900 transition-colors">User Manual</Link></li>
                 <li><Link to="/login" className="hover:text-gray-900 transition-colors">Dashboard Login</Link></li>
               </ul>
             </div>
