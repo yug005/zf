@@ -14,7 +14,10 @@ import {
   ShieldCheck,
   Clock,
   Key,
-  HelpCircle
+  HelpCircle,
+  Search,
+  Scale,
+  FileText
 } from 'lucide-react';
 import { EnterpriseContactForm } from '../components/EnterpriseContactForm';
 import { PageMeta } from '../components/PageMeta';
@@ -86,6 +89,51 @@ const LANDING_PLANS = [
     interval: '30s minimum interval',
     popular: false,
     cta: 'Choose Business',
+  },
+];
+
+const EXPLORE_PAGES = [
+  {
+    title: 'Pricing',
+    description: 'See transparent INR plans, enterprise options, and monitor limits without digging through the app.',
+    to: '/pricing',
+    icon: FileText,
+    badge: 'Start here',
+  },
+  {
+    title: 'API Monitoring Tools',
+    description: 'A clean directory comparing the major API monitoring tools teams evaluate before they buy.',
+    to: '/api-monitoring-tools',
+    icon: Search,
+    badge: 'Research',
+  },
+  {
+    title: 'Website Monitoring',
+    description: 'Learn how Zer0Friction tracks uptime, latency, SSL, and user-facing availability from one place.',
+    to: '/website-monitoring',
+    icon: Globe,
+    badge: 'Feature',
+  },
+  {
+    title: 'API Monitoring',
+    description: 'Explore endpoint checks, request assertions, alerting, and deploy-aware health workflows.',
+    to: '/api-monitoring',
+    icon: Activity,
+    badge: 'Feature',
+  },
+  {
+    title: 'vs UptimeRobot',
+    description: 'Compare Zer0Friction with one of the most common lightweight uptime tools teams switch from.',
+    to: '/vs-uptimerobot',
+    icon: Scale,
+    badge: 'Compare',
+  },
+  {
+    title: 'vs Grafana',
+    description: 'See the simpler path for startups and product teams that do not want to assemble a larger observability stack.',
+    to: '/vs-grafana',
+    icon: Scale,
+    badge: 'Compare',
   },
 ];
 
@@ -212,7 +260,8 @@ export default function LandingPage() {
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
+            <Link to="/pricing" className="hover:text-gray-900 transition-colors">Pricing</Link>
+            <a href="#explore" className="hover:text-gray-900 transition-colors">Compare</a>
             <a href="#how-to" className="hover:text-gray-900 transition-colors">How it Works</a>
             <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
           </div>
@@ -251,6 +300,20 @@ export default function LandingPage() {
               </button>
             </div>
             <p className="mt-8 text-sm text-gray-400 font-medium">No credit card required • Connect in 2 minutes</p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3 text-sm font-medium">
+              <Link to="/pricing" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:border-gray-300 hover:text-gray-900">
+                View Pricing
+              </Link>
+              <Link to="/api-monitoring-tools" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:border-gray-300 hover:text-gray-900">
+                Compare Tools
+              </Link>
+              <Link to="/vs-uptimerobot" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:border-gray-300 hover:text-gray-900">
+                vs UptimeRobot
+              </Link>
+              <Link to="/vs-grafana" className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:border-gray-300 hover:text-gray-900">
+                vs Grafana
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -449,6 +512,55 @@ export default function LandingPage() {
                 </div>
               ))}
               <EnterpriseContactForm />
+            </div>
+            <div className="mt-10">
+              <Link
+                to="/pricing"
+                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-800 transition hover:border-gray-300 hover:bg-gray-100"
+              >
+                Open full pricing page
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* 6.25 Explore Pages */}
+        <section id="explore" className="border-t border-gray-100 bg-white px-6 py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto mb-14 max-w-3xl text-center">
+              <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-400">Explore Zer0Friction</p>
+              <h2 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 md:text-5xl">
+                Compare tools, pricing, and monitoring workflows without hunting through the footer
+              </h2>
+              <p className="mt-5 text-lg leading-relaxed text-gray-500">
+                These pages are built for buyers, founders, and engineers who want to understand where Zer0Friction fits before creating an account.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {EXPLORE_PAGES.map((page) => (
+                <Link
+                  key={page.to}
+                  to={page.to}
+                  className="group rounded-[2rem] border border-gray-200 bg-gray-50 p-8 transition-all hover:-translate-y-1 hover:border-gray-300 hover:bg-white hover:shadow-xl hover:shadow-gray-900/5"
+                >
+                  <div className="mb-6 flex items-center justify-between">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 text-white">
+                      <page.icon className="h-6 w-6" />
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
+                      {page.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">{page.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-gray-500">{page.description}</p>
+                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-900">
+                    Open page
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
