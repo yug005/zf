@@ -570,6 +570,10 @@ export default function LandingPage() {
             <div>
               <h3 className="font-bold text-gray-900 mb-6 uppercase tracking-wider text-xs">Product</h3>
               <ul className="space-y-4 text-gray-500 font-medium text-sm">
+                <li><Link to="/website-monitoring" className="hover:text-gray-900 transition-colors">Website Monitoring</Link></li>
+                <li><Link to="/api-monitoring" className="hover:text-gray-900 transition-colors">API Monitoring</Link></li>
+                <li><Link to="/ssl-monitoring" className="hover:text-gray-900 transition-colors">SSL Monitoring</Link></li>
+                <li><Link to="/status-pages-feature" className="hover:text-gray-900 transition-colors">Status Pages</Link></li>
                 <li><a href="#features" className="hover:text-gray-900 transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing Options</a></li>
                 <li><Link to="/login" className="hover:text-gray-900 transition-colors">Dashboard Login</Link></li>

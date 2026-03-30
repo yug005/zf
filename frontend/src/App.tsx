@@ -17,6 +17,10 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const AuthSuccess = lazy(() => import('./pages/AuthSuccess'));
 const HowToUse = lazy(() => import('./pages/HowToUse'));
+const WebsiteMonitoring = lazy(() => import('./pages/WebsiteMonitoring'));
+const ApiMonitoring = lazy(() => import('./pages/ApiMonitoring'));
+const StatusPagesFeature = lazy(() => import('./pages/StatusPagesFeature'));
+const SslMonitoring = lazy(() => import('./pages/SslMonitoring'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Changes = lazy(() => import('./pages/Changes'));
 const Incidents = lazy(() => import('./pages/Incidents'));
@@ -112,6 +116,10 @@ export default function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/how-to-use" element={<HowToUse />} />
+              <Route path="/website-monitoring" element={<WebsiteMonitoring />} />
+              <Route path="/api-monitoring" element={<ApiMonitoring />} />
+              <Route path="/status-pages-feature" element={<StatusPagesFeature />} />
+              <Route path="/ssl-monitoring" element={<SslMonitoring />} />
 
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
