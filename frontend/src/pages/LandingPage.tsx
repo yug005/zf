@@ -170,6 +170,27 @@ export default function LandingPage() {
       email: 'yug@zer0friction.in',
     },
   };
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Zer0Friction',
+    url: 'https://www.zer0friction.in/',
+    logo: 'https://www.zer0friction.in/favicon.svg',
+    email: 'yug@zer0friction.in',
+    sameAs: ['https://github.com/yug005'],
+  };
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Zer0Friction',
+    url: 'https://www.zer0friction.in/',
+    description:
+      'Uptime monitoring for websites, APIs, incidents, deploy tracking, and status pages.',
+    publisher: {
+      '@type': 'Organization',
+      name: 'Zer0Friction',
+    },
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-primary-100 selection:text-primary-900 overflow-x-hidden">
@@ -180,6 +201,8 @@ export default function LandingPage() {
       />
       <SeoJsonLd id="landing-faq" data={faqSchema} />
       <SeoJsonLd id="landing-product" data={productSchema} />
+      <SeoJsonLd id="landing-organization" data={organizationSchema} />
+      <SeoJsonLd id="landing-website" data={websiteSchema} />
       
       {/* Navigation Bar */}
       <nav className="fixed top-0 inset-x-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 transition-all duration-300">

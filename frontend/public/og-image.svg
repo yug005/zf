@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#020617"/>
+  <circle cx="932" cy="118" r="196" fill="#0f172a"/>
+  <circle cx="208" cy="560" r="220" fill="#052e16"/>
+  <circle cx="1030" cy="516" r="168" fill="#082f49"/>
+  <rect x="84" y="76" width="154" height="154" rx="48" fill="#0f172a"/>
+  <path d="M191 112L137 189H172L112 267" stroke="url(#zf-hero)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="193" cy="114" r="13" fill="#22c55e"/>
+  <text x="84" y="336" fill="white" font-family="Segoe UI, Arial, sans-serif" font-size="74" font-weight="800">
+    Zer0Friction
+  </text>
+  <text x="84" y="406" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="500">
+    Uptime monitoring for websites, APIs, SSL, DNS,
+  </text>
+  <text x="84" y="448" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="500">
+    deploy health, incidents, and status pages.
+  </text>
+  <rect x="84" y="494" width="246" height="54" rx="27" fill="#0f172a" stroke="#1e293b"/>
+  <text x="114" y="529" fill="#38bdf8" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">
+    zer0friction.in
+  </text>
+  <defs>
+    <linearGradient id="zf-hero" x1="112" y1="112" x2="191" y2="267" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+</svg>

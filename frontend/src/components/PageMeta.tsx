@@ -5,10 +5,12 @@ type PageMetaProps = {
   description?: string;
   canonicalPath?: string;
   noIndex?: boolean;
+  imagePath?: string;
 };
 
 const DEFAULT_DESCRIPTION =
   'Zer0Friction helps teams monitor websites, APIs, SSL, DNS, incidents, status pages, and deploy health from one focused dashboard.';
+const DEFAULT_IMAGE_PATH = '/og-image.svg';
 
 function upsertMeta(name: string, content: string, attr: 'name' | 'property' = 'name') {
   let tag = document.head.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
@@ -35,6 +37,7 @@ export function PageMeta({
   description = DEFAULT_DESCRIPTION,
   canonicalPath,
   noIndex = false,
+  imagePath = DEFAULT_IMAGE_PATH,
 }: PageMetaProps) {
   useEffect(() => {
     const previousTitle = document.title;
@@ -43,24 +46,29 @@ export function PageMeta({
     const canonicalUrl = canonicalPath
       ? new URL(canonicalPath, window.location.origin).toString()
       : window.location.href;
+    const imageUrl = new URL(imagePath, window.location.origin).toString();
 
     upsertMeta('description', description);
     upsertMeta('application-name', 'Zer0Friction');
     upsertMeta('theme-color', '#0f172a');
+    upsertMeta('og:site_name', 'Zer0Friction', 'property');
     upsertMeta('og:title', title, 'property');
     upsertMeta('og:description', description, 'property');
     upsertMeta('og:type', 'website', 'property');
     upsertMeta('og:url', canonicalUrl, 'property');
+    upsertMeta('og:image', imageUrl, 'property');
     upsertMeta('twitter:card', 'summary_large_image');
+    upsertMeta('twitter:site', '@zer0friction');
     upsertMeta('twitter:title', title);
     upsertMeta('twitter:description', description);
+    upsertMeta('twitter:image', imageUrl);
     upsertMeta('robots', noIndex ? 'noindex, nofollow' : 'index, follow');
     upsertLink('canonical', canonicalUrl);
 
     return () => {
       document.title = previousTitle;
     };
-  }, [canonicalPath, description, noIndex, title]);
+  }, [canonicalPath, description, imagePath, noIndex, title]);
 
   return null;
 }
