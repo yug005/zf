@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import dns from 'node:dns';
 import net from 'node:net';
 import type { MonitorCheckJobData, CheckExecutionResult } from '../constants.js';
+import { buildHttpStatusErrorMessage } from '../check-diagnosis.js';
 
 const dnsLookup = dns.promises.lookup;
 
@@ -152,7 +153,7 @@ export async function executeHttpCheck(
       ? statusCode === expectedStatus
       : statusCode >= 200 && statusCode < 300;
 
-    let errorMessage = success ? undefined : `Unexpected status: ${statusCode}`;
+    let errorMessage = success ? undefined : buildHttpStatusErrorMessage(statusCode, expectedStatus);
     const matchedKeywords: string[] = [];
     const missingKeywords: string[] = [];
 

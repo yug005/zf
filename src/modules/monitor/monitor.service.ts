@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateMonitorDto } from './dto/create-monitor.dto.js';
 import { UpdateMonitorDto } from './dto/update-monitor.dto.js';
 import { SubscriptionAccessService } from '../billing/subscription-access.service.js';
+import { diagnoseCheck } from '../../engine/check-diagnosis.js';
 
 const MONITOR_INSIGHT_SAMPLE_SIZE = 20;
 const RECENT_ALERT_LIMIT = 5;
@@ -318,6 +319,13 @@ export class MonitorService {
   ) {
     const { project: _project, checkResults, alerts, ...monitorData } = monitor;
     const latestCheck = checkResults[0];
+    const latestDiagnosis = latestCheck
+      ? diagnoseCheck({
+          status: latestCheck.status,
+          statusCode: latestCheck.statusCode,
+          errorMessage: latestCheck.errorMessage,
+        })
+      : null;
     const successfulChecks = checkResults.filter((check) => check.status === CheckStatus.SUCCESS);
     const responseSamples = checkResults
       .map((check) => check.responseTimeMs)
@@ -347,6 +355,7 @@ export class MonitorService {
       successfulChecksCount: successfulChecks.length,
       latestStatusCode: latestCheck?.statusCode ?? null,
       lastErrorMessage: latestCheck?.errorMessage ?? null,
+      latestDiagnosis,
       hasActiveAlert: alerts.some((alert) => alert.status !== AlertStatus.RESOLVED),
       latestAlert: latestAlert
         ? {

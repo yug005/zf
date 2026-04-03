@@ -62,6 +62,13 @@ const StatusBadge = ({ status }: { status: Monitor['status'] }) => (
   </span>
 );
 
+const confidenceTone = (confidence?: number | null) => {
+  if (typeof confidence !== 'number') return 'text-slate-400';
+  if (confidence >= 90) return 'text-emerald-700';
+  if (confidence >= 75) return 'text-amber-700';
+  return 'text-slate-500';
+};
+
 const TypeBadge = ({ type }: { type: Monitor['type'] }) => {
   const icons: Record<string, any> = {
     HTTP: <Globe className="w-3 h-3 mr-1" />,
@@ -695,9 +702,14 @@ export default function MonitorsList() {
                            </span>
                         ) : (
                           <div className="space-y-1">
-                            <span className="truncate block">
-                              {m.lastErrorMessage || (m.latestStatusCode ? `HTTP ${m.latestStatusCode}` : 'Healthy')}
+                            <span className="truncate block font-medium text-slate-700">
+                              {m.latestDiagnosis?.summary || m.lastErrorMessage || (m.latestStatusCode ? `HTTP ${m.latestStatusCode}` : 'Healthy')}
                             </span>
+                            {m.latestDiagnosis ? (
+                              <span className={`block text-[11px] ${confidenceTone(m.latestDiagnosis.confidence)}`}>
+                                Confidence {m.latestDiagnosis.confidence}%{m.latestDiagnosis.isLikelyOutage ? ' • likely outage' : ' • access/config issue'}
+                              </span>
+                            ) : null}
                             {m.impactMetadata?.featureName || m.impactMetadata?.businessCriticality ? (
                               <span className="block text-[10px] uppercase tracking-wide text-slate-400">
                                 {(m.impactMetadata?.featureName || 'Unmapped feature')} • {(m.impactMetadata?.businessCriticality || 'MEDIUM')} impact

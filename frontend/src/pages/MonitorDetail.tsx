@@ -37,6 +37,15 @@ interface MonitorAlertSummary {
   resolvedAt?: string | null;
 }
 
+interface CheckDiagnosis {
+  code: string;
+  summary: string;
+  detail: string;
+  confidence: number;
+  suggestedAction?: string;
+  isLikelyOutage: boolean;
+}
+
 interface Monitor {
   id: string;
   name: string;
@@ -52,6 +61,7 @@ interface Monitor {
   recentChecksCount?: number;
   latestStatusCode?: number | null;
   lastErrorMessage?: string | null;
+  latestDiagnosis?: CheckDiagnosis | null;
   hasActiveAlert?: boolean;
   recentAlerts?: MonitorAlertSummary[];
   impactMetadata?: {
@@ -72,6 +82,7 @@ interface CheckResult {
   responseTimeMs: number | null;
   errorMessage: string | null;
   checkedAt: string;
+  diagnosis?: CheckDiagnosis | null;
 }
 
 interface CheckResultsResponse {
@@ -534,7 +545,7 @@ export default function MonitorDetail() {
         <SummaryCard
           title="Failure signals"
           value={recentFailures}
-          detail={monitor.lastErrorMessage || 'No recent failure message'}
+          detail={monitor.latestDiagnosis ? `${monitor.latestDiagnosis.summary} • ${monitor.latestDiagnosis.confidence}% confidence` : monitor.lastErrorMessage || 'No recent failure message'}
           icon={ShieldAlert}
           accent="bg-amber-50 text-amber-600"
         />
@@ -884,7 +895,7 @@ export default function MonitorDetail() {
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Code</th>
                         <th className="px-4 py-3">Response</th>
-                        <th className="px-4 py-3">Message</th>
+                        <th className="px-4 py-3">Diagnosis</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
@@ -907,7 +918,16 @@ export default function MonitorDetail() {
                           <td className="px-4 py-3 text-slate-700">{check.statusCode ?? '-'}</td>
                           <td className="px-4 py-3 text-slate-700">{formatResponseTime(check.responseTimeMs)}</td>
                           <td className="max-w-[340px] px-4 py-3 text-slate-500">
-                            {check.errorMessage || '-'}
+                            <div className="space-y-1">
+                              <span className="block font-medium text-slate-700">
+                                {check.diagnosis?.summary || check.errorMessage || '-'}
+                              </span>
+                              {check.diagnosis ? (
+                                <span className="block text-xs text-slate-500">
+                                  Confidence {check.diagnosis.confidence}%{check.diagnosis.isLikelyOutage ? ' • likely outage' : ' • access/config issue'}
+                                </span>
+                              ) : null}
+                            </div>
                           </td>
                         </tr>
                         ))
@@ -944,6 +964,29 @@ export default function MonitorDetail() {
             description="Key technical details about how this endpoint is configured and observed."
             icon={Server}
           >
+            {monitor.latestDiagnosis ? (
+              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-amber-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                    {monitor.latestDiagnosis.code.replaceAll('_', ' ')}
+                  </span>
+                  <span className="text-sm font-semibold text-amber-900">
+                    {monitor.latestDiagnosis.summary}
+                  </span>
+                  <span className="text-xs text-amber-700">
+                    Confidence {monitor.latestDiagnosis.confidence}%
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-amber-900">
+                  {monitor.latestDiagnosis.detail}
+                </p>
+                {monitor.latestDiagnosis.suggestedAction ? (
+                  <p className="mt-2 text-sm text-amber-800">
+                    Suggested action: {monitor.latestDiagnosis.suggestedAction}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <div className="space-y-4">
               {[
                 { label: 'Last checked', value: formatDateTime(monitor.lastCheckedAt) },

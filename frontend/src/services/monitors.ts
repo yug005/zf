@@ -1,5 +1,14 @@
 import { axiosPrivate } from './api';
 
+export interface CheckDiagnosis {
+  code: string;
+  summary: string;
+  detail: string;
+  confidence: number;
+  suggestedAction?: string;
+  isLikelyOutage: boolean;
+}
+
 export interface MonitorImpactMetadata {
   serviceName?: string | null;
   featureName?: string | null;
@@ -27,6 +36,7 @@ export interface Monitor {
   uptimePercentage?: number | null;
   latestStatusCode?: number | null;
   lastErrorMessage?: string | null;
+  latestDiagnosis?: CheckDiagnosis | null;
   body?: any;
 }
 

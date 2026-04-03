@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { MonitorStatus, AlertStatus, AlertChannel, CheckStatus, IncidentStatus } from '@prisma/client';
 import type { CheckExecutionResult } from './constants.js';
 import { AlertProducer } from './producer/alert.producer.js';
+import { diagnoseCheck } from './check-diagnosis.js';
 
 type EngineMonitor = {
   id: string;
@@ -149,12 +150,17 @@ export class MonitorEngineService {
 
     // Create alert ONLY on the transition to DOWN (not on every failure)
     if (thresholdCrossed && !wasAlreadyDown) {
-      await this.createAlert(monitor, result, newFailureCount);
+      const diagnosis = diagnoseCheck({
+        status: this.mapCheckStatus(result),
+        statusCode: result.statusCode,
+        errorMessage: result.errorMessage,
+      });
+      await this.createAlert(monitor, result, newFailureCount, diagnosis);
       await this.prisma.incident.create({
         data: {
           monitorId: monitor.id,
           status: IncidentStatus.INVESTIGATING,
-          message: `Monitor "${monitor.name}" went DOWN. Last error: ${result.errorMessage ?? 'Unknown'}`,
+          message: `Monitor "${monitor.name}" went DOWN. Likely cause: ${diagnosis ? `${diagnosis.summary} (${diagnosis.confidence}% confidence)` : result.errorMessage ?? 'Unknown'}`,
         }
       });
       this.logger.warn(
@@ -176,8 +182,9 @@ export class MonitorEngineService {
     monitor: EngineMonitor,
     result: CheckExecutionResult,
     failureCount: number,
+    diagnosis: ReturnType<typeof diagnoseCheck>,
   ): Promise<void> {
-    const message = `Monitor "${monitor.name}" is DOWN after ${failureCount} consecutive failures. Last error: ${result.errorMessage ?? 'Unknown'}`;
+    const message = `Monitor "${monitor.name}" is DOWN after ${failureCount} consecutive failures. Likely cause: ${diagnosis ? `${diagnosis.summary} (${diagnosis.confidence}% confidence)` : result.errorMessage ?? 'Unknown'}`;
 
     const alert = await this.prisma.alert.create({
       data: {
@@ -189,6 +196,7 @@ export class MonitorEngineService {
           statusCode: result.statusCode,
           responseTimeMs: result.responseTimeMs,
           errorMessage: result.errorMessage,
+          diagnosis,
           failureCount,
           threshold: monitor.failureThreshold,
           triggeredAt: new Date().toISOString(),

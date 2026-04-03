@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { diagnoseCheck } from '../../engine/check-diagnosis.js';
 
 type CheckHistoryQuery = {
   monitorId: string;
@@ -43,7 +44,20 @@ export class CheckService {
       this.prisma.checkResult.count({ where }),
     ]);
 
-    return { data, total, limit, offset, days: query.days ?? null };
+    return {
+      data: data.map((check) => ({
+        ...check,
+        diagnosis: diagnoseCheck({
+          status: check.status,
+          statusCode: check.statusCode,
+          errorMessage: check.errorMessage,
+        }),
+      })),
+      total,
+      limit,
+      offset,
+      days: query.days ?? null,
+    };
   }
 
   async exportChecksCsv(userId: string, query: CheckExportQuery): Promise<string> {
@@ -64,15 +78,26 @@ export class CheckService {
     });
 
     const rows = [
-      ['id', 'checkedAt', 'status', 'statusCode', 'responseTimeMs', 'errorMessage'],
-      ...checks.map((check) => [
-        check.id,
-        check.checkedAt.toISOString(),
-        check.status,
-        check.statusCode ?? '',
-        check.responseTimeMs ?? '',
-        check.errorMessage ?? '',
-      ]),
+      ['id', 'checkedAt', 'status', 'statusCode', 'responseTimeMs', 'errorMessage', 'diagnosisCode', 'diagnosisSummary', 'diagnosisConfidence'],
+      ...checks.map((check) => {
+        const diagnosis = diagnoseCheck({
+          status: check.status,
+          statusCode: check.statusCode,
+          errorMessage: check.errorMessage,
+        });
+
+        return [
+          check.id,
+          check.checkedAt.toISOString(),
+          check.status,
+          check.statusCode ?? '',
+          check.responseTimeMs ?? '',
+          check.errorMessage ?? '',
+          diagnosis?.code ?? '',
+          diagnosis?.summary ?? '',
+          diagnosis?.confidence ?? '',
+        ];
+      }),
     ];
 
     return rows.map((row) => row.map((value) => this.escapeCsv(String(value))).join(',')).join('\n');
@@ -102,7 +127,14 @@ export class CheckService {
     }
 
     const { monitor: _monitor, ...checkData } = check;
-    return checkData;
+    return {
+      ...checkData,
+      diagnosis: diagnoseCheck({
+        status: checkData.status,
+        statusCode: checkData.statusCode,
+        errorMessage: checkData.errorMessage,
+      }),
+    };
   }
 
   private buildWhere(monitorId: string, days?: number) {
