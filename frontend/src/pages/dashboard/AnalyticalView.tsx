@@ -11,6 +11,8 @@ import {
   PieChart,
   Pie,
   Tooltip as RechartsTooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import {
   Activity,
@@ -24,17 +26,20 @@ import {
   Orbit,
   ShieldAlert,
   Sparkles,
+  Target,
+  TowerControl,
   TriangleAlert,
   Trophy,
   Users,
   Waves,
+  Zap,
 } from 'lucide-react';
 import type { ActiveWatchChange, Alert, DashboardInsights, Monitor } from './types';
 import { formatPercentage, formatRelativeTime, formatResponseTime } from './types';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 22 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.42, ease: 'easeOut' } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.38, ease: 'easeOut' } },
 };
 
 const tooltipStyle: CSSProperties = {
@@ -47,7 +52,7 @@ const tooltipStyle: CSSProperties = {
 };
 
 const panel =
-  'rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.022))] shadow-[0_30px_100px_rgba(0,0,0,0.3)] backdrop-blur-xl';
+  'rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02))] shadow-[0_30px_100px_rgba(0,0,0,0.3)] backdrop-blur-xl';
 
 function Section({
   title,
@@ -117,11 +122,11 @@ function EmptyState({ text }: { text: string }) {
 function RankedStrip({
   items,
   color,
-  valueLabel,
+  suffix = '',
 }: {
-  items: Array<{ label: string; value: number }>;
+  items: Array<{ label: string; value: number; helper?: string }>;
   color: string;
-  valueLabel?: string;
+  suffix?: string;
 }) {
   if (items.length === 0) {
     return <EmptyState text="No data available yet." />;
@@ -137,9 +142,10 @@ function RankedStrip({
             <p className="text-sm font-semibold text-white">{item.label}</p>
             <p className="text-sm font-black text-slate-100">
               {item.value}
-              {valueLabel ? valueLabel : ''}
+              {suffix}
             </p>
           </div>
+          {item.helper ? <p className="mt-1 text-xs text-slate-500">{item.helper}</p> : null}
           <div className="mt-3 h-2 rounded-full bg-white/[0.05]">
             <motion.div
               initial={{ width: 0 }}
@@ -171,12 +177,13 @@ export default function AnalyticalView({
       [...monitors]
         .filter((monitor) => typeof monitor.avgResponseTimeMs === 'number' && monitor.avgResponseTimeMs > 0)
         .sort((a, b) => (b.avgResponseTimeMs ?? 0) - (a.avgResponseTimeMs ?? 0))
-        .slice(0, 5)
+        .slice(0, 6)
         .map((monitor) => ({
-          shortLabel: monitor.name.length > 14 ? `${monitor.name.slice(0, 14)}...` : monitor.name,
+          shortLabel: monitor.name.length > 16 ? `${monitor.name.slice(0, 16)}...` : monitor.name,
           fullLabel: monitor.name,
           value: monitor.avgResponseTimeMs ?? 0,
           status: monitor.status,
+          helper: formatPercentage(monitor.uptimePercentage),
         })),
     [monitors],
   );
@@ -186,7 +193,26 @@ export default function AnalyticalView({
       [...monitors]
         .filter((monitor) => typeof monitor.avgResponseTimeMs === 'number' && monitor.avgResponseTimeMs > 0)
         .sort((a, b) => (a.avgResponseTimeMs ?? 0) - (b.avgResponseTimeMs ?? 0))
-        .slice(0, 5),
+        .slice(0, 5)
+        .map((monitor) => ({
+          label: monitor.name,
+          value: monitor.avgResponseTimeMs ?? 0,
+          helper: `${formatPercentage(monitor.uptimePercentage)} uptime`,
+        })),
+    [monitors],
+  );
+
+  const weakestUptime = useMemo(
+    () =>
+      [...monitors]
+        .filter((monitor) => typeof monitor.uptimePercentage === 'number')
+        .sort((a, b) => (a.uptimePercentage ?? 0) - (b.uptimePercentage ?? 0))
+        .slice(0, 5)
+        .map((monitor) => ({
+          label: monitor.name,
+          value: Math.round(monitor.uptimePercentage ?? 0),
+          helper: formatResponseTime(monitor.avgResponseTimeMs),
+        })),
     [monitors],
   );
 
@@ -227,12 +253,59 @@ export default function AnalyticalView({
     [insights.slaPressure],
   );
 
-  const attentionMonitors = useMemo(() => insights.attentionMonitors.slice(0, 4), [insights.attentionMonitors]);
-  const freshAlerts = useMemo(() => alerts.slice(0, 5), [alerts]);
-  const activeChanges = useMemo(() => activeWatchChanges.slice(0, 3), [activeWatchChanges]);
+  const attentionMonitors = useMemo(
+    () =>
+      insights.attentionMonitors.slice(0, 4).map((monitor) => ({
+        id: monitor.id,
+        name: monitor.name,
+        status: monitor.status,
+        summary:
+          monitor.latestDiagnosis?.summary ||
+          monitor.lastErrorMessage ||
+          `${formatResponseTime(monitor.avgResponseTimeMs)} avg response`,
+        checkedAt: monitor.lastCheckedAt,
+      })),
+    [insights.attentionMonitors],
+  );
+
+  const freshAlerts = useMemo(() => alerts.slice(0, 6), [alerts]);
+  const activeChanges = useMemo(() => activeWatchChanges.slice(0, 4), [activeWatchChanges]);
   const impactIncidents = useMemo(() => insights.topImpactIncidents.slice(0, 4), [insights.topImpactIncidents]);
 
-  const postureColors = ['#22d3ee', '#10b981', '#f59e0b', '#f43f5e'];
+  const missingMapping = useMemo(() => {
+    return monitors
+      .filter(
+        (monitor) =>
+          !monitor.impactMetadata?.serviceName ||
+          !monitor.impactMetadata?.teamOwner ||
+          !monitor.impactMetadata?.featureName,
+      )
+      .slice(0, 5)
+      .map((monitor) => ({
+        label: monitor.name,
+        value:
+          Number(!monitor.impactMetadata?.serviceName) +
+          Number(!monitor.impactMetadata?.teamOwner) +
+          Number(!monitor.impactMetadata?.featureName),
+        helper: 'mapping gaps',
+      }));
+  }, [monitors]);
+
+  const diagnosisMix = useMemo(() => {
+    const buckets = new Map<string, number>();
+    for (const monitor of monitors) {
+      const code = monitor.latestDiagnosis?.code;
+      if (!code) continue;
+      buckets.set(code, (buckets.get(code) || 0) + 1);
+    }
+    return [...buckets.entries()]
+      .map(([label, value]) => ({ label: label.replaceAll('_', ' '), value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }, [monitors]);
+
+  const protocolColors = ['#22d3ee', '#10b981', '#f59e0b', '#8b5cf6'];
+  const postureColors = ['#10b981', '#f43f5e', '#f59e0b', '#64748b'];
 
   return (
     <motion.div
@@ -250,22 +323,22 @@ export default function AnalyticalView({
         <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/15 bg-cyan-400/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.26em] text-cyan-200">
-              <Compass className="h-3.5 w-3.5" />
+              <TowerControl className="h-3.5 w-3.5" />
               Analytical mode
             </div>
             <h2 className="mt-5 max-w-2xl text-4xl font-black leading-tight text-white">
-              Clean board, but with real operational depth.
+              Clean board, enterprise density.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-              This mode is built to stay clean while still surfacing enough detail to make decisions:
-              health posture, protocol mix, owners, regions, SLA pressure, risk queue, alert motion, deploy watch, and performance leaders.
+              Inspired by how serious observability products prioritize hierarchy: a few strong visuals,
+              then deep ranked detail, ownership context, alert motion, fleet composition, and drilldown surfaces.
             </p>
           </div>
 
           <motion.div
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="grid gap-3 sm:grid-cols-2 xl:w-[440px]"
+            className="grid gap-3 sm:grid-cols-2 xl:w-[460px]"
           >
             <div className="rounded-[28px] border border-white/8 bg-slate-950/30 p-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Health score</p>
@@ -279,9 +352,9 @@ export default function AnalyticalView({
               </p>
             </div>
             <div className="rounded-[28px] border border-white/8 bg-slate-950/30 p-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Open incidents</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Active incidents</p>
               <p className="mt-3 text-5xl font-black text-white">{insights.activeIncidents.length}</p>
-              <p className="mt-2 text-sm text-slate-400">{insights.criticalIncidentCount} high or critical</p>
+              <p className="mt-2 text-sm text-slate-400">{insights.criticalIncidentCount} high or critical severity</p>
             </div>
           </motion.div>
         </div>
@@ -290,14 +363,14 @@ export default function AnalyticalView({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Fleet availability" value={formatPercentage(insights.fleetAvailability)} helper={`${insights.healthy} healthy monitors live`} tone="text-emerald-300" />
         <MetricCard label="Average latency" value={formatResponseTime(insights.avgResponseTimeMs)} helper={insights.slowestMonitors[0]?.name || 'Waiting for samples'} tone="text-cyan-200" />
-        <MetricCard label="Alerts / 24h" value={insights.alertsLast24h} helper="Recent noise across channels" tone="text-slate-100" />
+        <MetricCard label="Alerts / 24h" value={insights.alertsLast24h} helper="Recent operator-visible noise" tone="text-slate-100" />
         <MetricCard label="Impact coverage" value={`${insights.impactCoverage}%`} helper={`${insights.impactMappedMonitors} mapped monitors`} tone="text-violet-200" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <Section
           title="Latency slow lane"
-          caption="A focused performance chart for the monitors currently dragging the fleet."
+          caption="The monitors currently dragging the fleet, with visual ranking and side detail."
           icon={Gauge}
           action={
             <Link to="/monitors" className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-200 transition hover:text-white">
@@ -311,8 +384,10 @@ export default function AnalyticalView({
             <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={slowLane} barCategoryGap="18%">
+                  <BarChart data={slowLane} barCategoryGap="16%">
                     <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="shortLabel" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
                     <RechartsTooltip
                       contentStyle={tooltipStyle}
                       formatter={(value) => [`${value}ms`, 'Latency']}
@@ -343,7 +418,10 @@ export default function AnalyticalView({
                       <p className="text-sm font-semibold text-white">{item.fullLabel}</p>
                       <p className="text-lg font-black text-slate-100">{item.value}ms</p>
                     </div>
-                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-slate-500">{item.status}</p>
+                    <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                      <span className="uppercase tracking-[0.18em] text-slate-500">{item.status}</span>
+                      <span className="text-slate-400">{item.helper}</span>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -398,8 +476,8 @@ export default function AnalyticalView({
                     <p className="text-sm font-semibold text-white">{monitor.name}</p>
                     <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-slate-200">{monitor.status}</span>
                   </div>
-                  <p className="mt-2 text-sm text-slate-400">{monitor.latestDiagnosis?.summary || monitor.lastErrorMessage || 'Needs review'}</p>
-                  <p className="mt-3 text-xs text-slate-500">{formatRelativeTime(monitor.lastCheckedAt)}</p>
+                  <p className="mt-2 text-sm text-slate-400">{monitor.summary}</p>
+                  <p className="mt-3 text-xs text-slate-500">{formatRelativeTime(monitor.checkedAt)}</p>
                 </Link>
               ))}
             </div>
@@ -425,7 +503,7 @@ export default function AnalyticalView({
           )}
         </Section>
 
-        <Section title="Deploy watch" caption="Changes still sitting inside active observation windows." icon={GitCompare}>
+        <Section title="Deploy watch" caption="Changes still inside active observation windows." icon={GitCompare}>
           {activeChanges.length === 0 ? (
             <EmptyState text="No active watch windows at the moment." />
           ) : (
@@ -448,35 +526,47 @@ export default function AnalyticalView({
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-        <Section title="Impact matrix" caption="Ownership, region, and SLA pressure across the active fleet." icon={Layers3}>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-cyan-200" />
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Owners</p>
+        <Section title="Impact matrix" caption="Ownership, region, SLA, and monitor quality context." icon={Layers3}>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-cyan-200" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Owner pressure</p>
+                </div>
+                <RankedStrip items={ownerPressure} color="#22d3ee" />
               </div>
-              <RankedStrip items={ownerPressure} color="#22d3ee" />
+
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <Globe2 className="h-4 w-4 text-emerald-200" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Region pressure</p>
+                </div>
+                <RankedStrip items={regionPressure} color="#10b981" />
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Globe2 className="h-4 w-4 text-emerald-200" />
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Regions</p>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-200" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">SLA pressure</p>
+                </div>
+                <RankedStrip items={slaPressure} color="#f59e0b" />
               </div>
-              <RankedStrip items={regionPressure} color="#10b981" />
-            </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-amber-200" />
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">SLA pressure</p>
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <Target className="h-4 w-4 text-rose-200" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Missing mapping</p>
+                </div>
+                <RankedStrip items={missingMapping} color="#f43f5e" />
               </div>
-              <RankedStrip items={slaPressure} color="#f59e0b" />
             </div>
           </div>
         </Section>
 
-        <Section title="System composition" caption="Protocol mix plus fast-lane and impact highlights." icon={Orbit}>
+        <Section title="Composition and quality" caption="Protocol mix, fast lane, weak uptime, and diagnosis mix." icon={Orbit}>
           <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="space-y-4">
               <div className="h-[220px]">
@@ -487,7 +577,7 @@ export default function AnalyticalView({
                     <PieChart>
                       <Pie data={typeMix} dataKey="total" nameKey="type" innerRadius={50} outerRadius={78} paddingAngle={4}>
                         {typeMix.map((entry, index) => (
-                          <Cell key={entry.type} fill={postureColors[index % postureColors.length]} />
+                          <Cell key={entry.type} fill={protocolColors[index % protocolColors.length]} />
                         ))}
                       </Pie>
                       <RechartsTooltip contentStyle={tooltipStyle} />
@@ -495,9 +585,13 @@ export default function AnalyticalView({
                   </ResponsiveContainer>
                 )}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <MetricCard label="Affected features" value={insights.affectedFeatures} helper="Features under active stress" tone="text-cyan-200" />
-                <MetricCard label="Affected journeys" value={insights.affectedJourneys} helper="Journeys currently touched" tone="text-amber-200" />
+
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-violet-200" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Diagnosis mix</p>
+                </div>
+                <RankedStrip items={diagnosisMix.map((item) => ({ ...item, helper: 'monitors' }))} color="#8b5cf6" />
               </div>
             </div>
 
@@ -507,60 +601,56 @@ export default function AnalyticalView({
                   <Trophy className="h-4 w-4 text-emerald-200" />
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Fast lane</p>
                 </div>
-                <div className="space-y-3">
-                  {fastLane.length === 0 ? (
-                    <EmptyState text="Fast lane appears as checks come in." />
-                  ) : (
-                    fastLane.map((monitor, index) => (
-                      <motion.div key={monitor.id} whileHover={{ x: 4 }} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-emerald-400/15 bg-emerald-500/10 text-xs font-black text-emerald-200">
-                              0{index + 1}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-white">{monitor.name}</p>
-                              <p className="mt-1 text-xs text-slate-500">{formatPercentage(monitor.uptimePercentage)} uptime</p>
-                            </div>
-                          </div>
-                          <p className="text-base font-black text-slate-100">{formatResponseTime(monitor.avgResponseTimeMs)}</p>
-                        </div>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
+                <RankedStrip items={fastLane} color="#10b981" suffix="ms" />
               </div>
 
               <div>
                 <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-violet-200" />
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Impact incidents</p>
+                  <Activity className="h-4 w-4 text-amber-200" />
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Weak uptime</p>
                 </div>
-                <div className="space-y-3">
-                  {impactIncidents.length === 0 ? (
-                    <EmptyState text="No open impact incidents right now." />
-                  ) : (
-                    impactIncidents.map((incident) => (
-                      <motion.div key={incident.id} whileHover={{ scale: 1.01 }} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white">{incident.monitor.name}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{incident.severity}</p>
-                          </div>
-                          <div className="rounded-full border border-amber-400/15 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200">
-                            Impact {incident.impactScore}
-                          </div>
-                        </div>
-                        <p className="mt-3 text-sm text-slate-400">{incident.message}</p>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
+                <RankedStrip items={weakestUptime} color="#f59e0b" suffix="%" />
               </div>
             </div>
           </div>
         </Section>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Affected features" value={insights.affectedFeatures} helper="Features under active stress" tone="text-cyan-200" />
+        <MetricCard label="Affected journeys" value={insights.affectedJourneys} helper="Journeys currently touched" tone="text-amber-200" />
+        <MetricCard label="Watch time" value={`${insights.activeWatchMinutes}m`} helper="Deploy-watch still in play" tone="text-emerald-200" />
+        <MetricCard label="Fastest monitor" value={formatResponseTime(insights.fastestMonitor?.avgResponseTimeMs)} helper={insights.fastestMonitor?.name || 'No sample yet'} tone="text-slate-100" />
+      </div>
+
+      <Section title="Impact incidents" caption="High-impact incident queue with severity, ownership hints, and recent motion." icon={Sparkles}>
+        {impactIncidents.length === 0 ? (
+          <EmptyState text="No open impact incidents right now." />
+        ) : (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {impactIncidents.map((incident) => (
+              <motion.div key={incident.id} whileHover={{ scale: 1.01 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{incident.monitor.name}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{incident.severity}</p>
+                  </div>
+                  <div className="rounded-full border border-amber-400/15 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                    Impact {incident.impactScore}
+                  </div>
+                </div>
+                <p className="mt-3 text-sm text-slate-400">{incident.message}</p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                  <span className="rounded-full border border-white/10 px-3 py-1">{formatRelativeTime(incident.createdAt)}</span>
+                  {incident.impactSummary.featureName ? <span className="rounded-full border border-white/10 px-3 py-1">{incident.impactSummary.featureName}</span> : null}
+                  {incident.impactSummary.teamOwner ? <span className="rounded-full border border-white/10 px-3 py-1">{incident.impactSummary.teamOwner}</span> : null}
+                  {incident.impactSummary.customerJourney ? <span className="rounded-full border border-white/10 px-3 py-1">{incident.impactSummary.customerJourney}</span> : null}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </Section>
     </motion.div>
   );
 }
