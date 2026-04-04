@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { ThemeProvider } from './components/ThemeProvider';
 import { fetchCurrentUser } from './services/current-user';
 import { PageMeta } from './components/PageMeta';
+import SystemBootLoader from './components/SystemBootLoader';
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
 const AuthLayout = lazy(() => import('./layouts/AuthLayout'));
@@ -28,7 +29,7 @@ const VsUptimeRobot = lazy(() => import('./pages/VsUptimeRobot'));
 const VsGrafana = lazy(() => import('./pages/VsGrafana'));
 const VsBetterStack = lazy(() => import('./pages/VsBetterStack'));
 const VsPingdom = lazy(() => import('./pages/VsPingdom'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Dashboard = lazy(() => import('./pages/dashboard'));
 const Changes = lazy(() => import('./pages/Changes'));
 const Incidents = lazy(() => import('./pages/Incidents'));
 const MonitorsList = lazy(() => import('./pages/Monitors'));
@@ -46,17 +47,7 @@ const queryClient = new QueryClient({
 });
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto h-12 w-12 animate-pulse rounded-2xl bg-slate-900" />
-        <h2 className="mt-4 text-lg font-semibold text-slate-900">Loading workspace</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          Pulling the next dashboard view into place.
-        </p>
-      </div>
-    </div>
-  );
+  return <SystemBootLoader minDuration={900} />;
 }
 
 function RootRoute() {
@@ -134,6 +125,7 @@ export default function App() {
               <Route path="/vs-grafana" element={<VsGrafana />} />
               <Route path="/vs-better-stack" element={<VsBetterStack />} />
               <Route path="/vs-pingdom" element={<VsPingdom />} />
+
 
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />

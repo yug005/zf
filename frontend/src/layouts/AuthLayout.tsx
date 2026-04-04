@@ -13,9 +13,9 @@ export default function AuthLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-950">
+      <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
         <PageMeta title="Loading Session | Zer0Friction" noIndex />
-        <div className="h-12 w-12 animate-pulse rounded-2xl bg-slate-900 dark:bg-slate-200" />
+        <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/[0.05]" />
       </div>
     );
   }
@@ -25,20 +25,15 @@ export default function AuthLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <PageMeta
-        title="Sign In | Zer0Friction"
-        description="Sign in to Zer0Friction to manage monitors, incidents, status pages, and deploy-aware uptime workflows."
-        noIndex
-      />
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          Sign in to your account
-        </h2>
+    <div className="flex min-h-screen items-center justify-center bg-[#080c14] px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Ambient background blobs matching dashboard */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-emerald-900/20 blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[10%] h-[30%] w-[30%] rounded-full bg-blue-900/20 blur-[120px]" />
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-slate-900 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-slate-200 dark:border-slate-800">
+      <div className="w-full max-w-[420px] relative z-10">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl shadow-2xl shadow-black/50 p-8 sm:p-10">
           <Outlet />
         </div>
       </div>

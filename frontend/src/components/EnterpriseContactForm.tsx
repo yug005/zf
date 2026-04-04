@@ -37,34 +37,34 @@ export function EnterpriseContactForm({ className = '' }: EnterpriseContactFormP
   };
 
   return (
-    <div className={`relative flex h-full flex-col rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm ${className}`}>
-      <div className="mb-6 inline-flex w-fit items-center rounded-full bg-slate-900 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.25em] text-white">
+    <div className={`relative flex h-full flex-col rounded-[2rem] border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] p-8 shadow-sm dark:shadow-none dark:backdrop-blur-sm ${className}`}>
+      <div className="mb-6 inline-flex w-fit items-center rounded-full bg-slate-900 dark:bg-aurora-teal/20 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.25em] text-white dark:text-aurora-teal">
         Enterprise
       </div>
 
-      <h3 className="text-2xl font-bold text-slate-900">Contact Support</h3>
-      <p className="mt-3 text-sm leading-relaxed text-slate-500">
+      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Contact Support</h3>
+      <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-white/40">
         Need higher volumes, custom onboarding, or a tailored monitoring setup? Share your details and our team will contact you.
       </p>
 
-      <ul className="mt-6 space-y-3 text-sm text-slate-700">
+      <ul className="mt-6 space-y-3 text-sm text-slate-700 dark:text-white/60">
         <li className="flex items-start">
-          <Building2 className="mr-3 mt-0.5 h-4 w-4 shrink-0 text-slate-900" />
+          <Building2 className="mr-3 mt-0.5 h-4 w-4 shrink-0 text-slate-900 dark:text-white/80" />
           Custom monitor volume and enterprise onboarding
         </li>
         <li className="flex items-start">
-          <ShieldCheck className="mr-3 mt-0.5 h-4 w-4 shrink-0 text-slate-900" />
+          <ShieldCheck className="mr-3 mt-0.5 h-4 w-4 shrink-0 text-slate-900 dark:text-white/80" />
           Dedicated support for larger customer-facing infrastructure
         </li>
         <li className="flex items-start">
-          <Headphones className="mr-3 mt-0.5 h-4 w-4 shrink-0 text-slate-900" />
+          <Headphones className="mr-3 mt-0.5 h-4 w-4 shrink-0 text-slate-900 dark:text-white/80" />
           Rollout help for bigger teams and production workloads
         </li>
       </ul>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-white/40">
             Name
           </label>
           <input
@@ -72,13 +72,13 @@ export function EnterpriseContactForm({ className = '' }: EnterpriseContactFormP
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition focus:border-slate-400 dark:focus:border-aurora-teal/40 focus:ring-2 focus:ring-slate-200 dark:focus:ring-aurora-teal/10"
             placeholder="Your full name"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-white/40">
             Work Email
           </label>
           <input
@@ -86,13 +86,13 @@ export function EnterpriseContactForm({ className = '' }: EnterpriseContactFormP
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition focus:border-slate-400 dark:focus:border-aurora-teal/40 focus:ring-2 focus:ring-slate-200 dark:focus:ring-aurora-teal/10"
             placeholder="you@company.com"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-white/40">
             Company
           </label>
           <input
@@ -100,13 +100,13 @@ export function EnterpriseContactForm({ className = '' }: EnterpriseContactFormP
             type="text"
             value={company}
             onChange={(event) => setCompany(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition focus:border-slate-400 dark:focus:border-aurora-teal/40 focus:ring-2 focus:ring-slate-200 dark:focus:ring-aurora-teal/10"
             placeholder="Company name"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-white/40">
             Requirements
           </label>
           <textarea
@@ -114,24 +114,24 @@ export function EnterpriseContactForm({ className = '' }: EnterpriseContactFormP
             rows={4}
             value={requirements}
             onChange={(event) => setRequirements(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] px-4 py-3 text-sm text-slate-900 dark:text-white outline-none transition focus:border-slate-400 dark:focus:border-aurora-teal/40 focus:ring-2 focus:ring-slate-200 dark:focus:ring-aurora-teal/10"
             placeholder="Tell us about monitor volume, team size, or any custom needs."
           />
         </div>
 
         <button
           type="submit"
-          className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+          className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 dark:bg-gradient-to-r dark:from-aurora-teal dark:to-aurora-emerald px-4 py-3 text-sm font-bold text-white dark:text-void-950 transition hover:bg-slate-800"
         >
           Contact support
           <ArrowRight className="ml-2 h-4 w-4" />
         </button>
       </form>
 
-      <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+      <div className="mt-4 rounded-2xl border border-emerald-100 dark:border-aurora-teal/20 bg-emerald-50 dark:bg-aurora-teal/5 px-4 py-3 text-sm text-emerald-900 dark:text-aurora-teal/80">
         {hasOpenedDraft
-          ? 'Your enterprise request email is ready. Send it and our team will contact you.'
-          : 'Fill this form and we will prepare your enterprise contact request.'}
+          ? 'Your email draft is ready. Send it and our team will contact you.'
+          : 'Fill this form and we will open an enterprise contact draft for you.'}
       </div>
     </div>
   );

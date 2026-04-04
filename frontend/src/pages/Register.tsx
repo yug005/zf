@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Activity,
   Loader2,
   AlertCircle,
   Mail,
@@ -76,46 +75,46 @@ export default function Register() {
           description="Verify your email address to activate your Zer0Friction account."
           noIndex
         />
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 shadow-inner">
-          <Mail className="h-8 w-8 text-green-600" />
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+          <Mail className="h-8 w-8 text-emerald-400" />
         </div>
-        <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Check your email
+        <h2 className="text-2xl font-extrabold tracking-tight text-white">
+          Inbox incoming
         </h2>
-        <p className="text-lg leading-relaxed text-gray-600 dark:text-slate-300">
-          We sent a secure activation link to{' '}
-          <span className="font-semibold text-gray-900 dark:text-white">{email}</span>.
-          Verify your email to start your 14-day trial and unlock monitoring.
+        <p className="text-sm leading-relaxed text-slate-400">
+          Secure activation link sent to{' '}
+          <span className="font-semibold text-white">{email}</span>.
+          Verify your email to initialize your workspace.
         </p>
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left shadow-sm dark:border-slate-700 dark:bg-slate-800/60">
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">What to do next</p>
-          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Open the verification email, click the secure link, and then sign in. If it does not
-            show up in a minute, check spam or request a fresh link below.
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 text-left shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">What to do next</p>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Open the email, click the secure link, and sign in. If it does not
+            show up in a minute, check spam or request a fresh link.
           </p>
           <button
             type="button"
             onClick={handleResendVerification}
             disabled={isResending}
-            className="mt-4 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+            className="mt-4 inline-flex items-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isResending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-400" />
             ) : (
               <RefreshCcw className="mr-2 h-4 w-4" />
             )}
-            Resend verification email
+            Resend Link
           </button>
           {resendMessage ? (
-            <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{resendMessage}</p>
+            <p className="mt-3 text-[11px] text-emerald-400">{resendMessage}</p>
           ) : null}
         </div>
         <div className="pt-2">
           <Link
             to="/login"
-            className="inline-flex items-center rounded-xl border border-transparent bg-gray-900 px-6 py-3 text-base font-medium text-white shadow-sm transition-all hover:bg-gray-800 group"
+            className="inline-flex items-center rounded-xl bg-white/[0.05] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-white/[0.1] active:scale-[0.98] group"
           >
-            Go to Sign In
+            Return to Sign In
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
@@ -134,11 +133,11 @@ export default function Register() {
         <div className="flex justify-center">
           <BrandLogo compact />
         </div>
-        <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Start monitoring today
+        <h2 className="mt-6 text-2xl font-extrabold tracking-tight text-white mb-2">
+          Initialize workspace
         </h2>
-        <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">
-          Join Zer0Friction and make every outage easier to catch early.
+        <p className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-500">
+          Join the observability platform
         </p>
       </div>
 
@@ -148,9 +147,9 @@ export default function Register() {
           onClick={() => {
             window.location.href = getOAuthUrl('google');
           }}
-          className="flex items-center justify-center gap-2.5 rounded-xl border border-gray-200 px-4 py-3 font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+          className="flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24">
+          <svg className="h-4 w-4" viewBox="0 0 24 24">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"
@@ -176,34 +175,34 @@ export default function Register() {
           onClick={() => {
             window.location.href = getOAuthUrl('github');
           }}
-          className="flex items-center justify-center gap-2.5 rounded-xl border border-gray-200 px-4 py-3 font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] dark:border-slate-700 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800"
+          className="flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
         >
-          <Github className="h-5 w-5 text-slate-900 dark:text-slate-100" />
+          <Github className="h-4 w-4 text-slate-300" />
           GitHub
         </button>
       </div>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-200 dark:border-slate-700"></span>
+          <span className="w-full border-t border-white/[0.08]"></span>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-4 font-medium tracking-wider text-gray-500 dark:bg-slate-900 dark:text-slate-400">
-            Or continue with
+        <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
+          <span className="bg-[#0c121e] px-4 text-slate-500">
+            Or continue with email
           </span>
         </div>
       </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
-          <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-400 animate-in slide-in-from-top-2 duration-200">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{error}</span>
           </div>
         ) : null}
 
-        <div className="space-y-1">
-          <label className="ml-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+        <div className="space-y-1.5">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Full Name
           </label>
           <input
@@ -211,27 +210,27 @@ export default function Register() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="auth-input sm:text-sm"
+            className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
             placeholder="Your name"
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="ml-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
-            Email address
+        <div className="space-y-1.5">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Email Address
           </label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="auth-input sm:text-sm"
+            className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
             placeholder="you@company.com"
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="ml-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
+        <div className="space-y-1.5">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Password
           </label>
           <div className="relative">
@@ -241,18 +240,18 @@ export default function Register() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="auth-input pr-12 sm:text-sm"
+              className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 pr-12 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
               placeholder="********"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 transition-colors hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300"
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 hover:text-slate-300 transition-colors"
             >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <p className="ml-1 text-[11px] text-gray-500 dark:text-slate-400">
+          <p className="ml-1 mt-1.5 text-[10px] text-slate-500">
             Minimum 8 characters with at least one letter and one number.
           </p>
         </div>
@@ -260,15 +259,15 @@ export default function Register() {
         <button
           type="submit"
           disabled={isLoading || !name || !email || !password || password.length < 8}
-          className="w-full rounded-xl border border-transparent bg-primary-600 px-4 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary-500/30 transition-all hover:bg-primary-500 active:scale-[0.98] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
+          className="mt-6 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all hover:bg-gradient-to-r hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] disabled:opacity-50"
         >
-          {isLoading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : 'Create Account'}
+          {isLoading ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : 'Create Workspace'}
         </button>
 
-        <div className="pt-2 text-center">
-          <p className="text-sm text-gray-600 dark:text-slate-300">
+        <div className="pt-4 text-center">
+          <p className="text-[11px] font-medium text-slate-500">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-500">
+            <Link to="/login" className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
               Sign in here
             </Link>
           </p>

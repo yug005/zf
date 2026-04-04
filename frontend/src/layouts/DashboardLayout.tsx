@@ -70,14 +70,82 @@ export default function DashboardLayout() {
 
   if (isUserLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#080c14]">
-        <div className="text-center">
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 shadow-xl"
-          />
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-slate-500">Checking Session</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#080c14] overflow-hidden">
+        {/* Subtle ambient background */}
+        <div className="pointer-events-none fixed inset-0">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-emerald-900/10 blur-[120px]" />
+        </div>
+
+        <div className="relative text-center z-10">
+          {/* Radar ring system */}
+          <div className="relative mx-auto h-28 w-28">
+            {/* Outer ring – pulses */}
+            <motion.div
+              className="absolute inset-0 rounded-full border border-emerald-500/20"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Middle ring – steady */}
+            <div className="absolute inset-2 rounded-full border border-white/[0.06]" />
+            {/* Inner ring – glows */}
+            <motion.div
+              className="absolute inset-5 rounded-full border border-emerald-500/30"
+              animate={{ opacity: [0.3, 0.7, 0.3] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Center icon – lightning bolt */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.15)]"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-emerald-400">
+                  <motion.path
+                    d="M13 2L4 14h7l-2 8 9-12h-7l2-8z"
+                    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                    initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                    transition={{ duration: 1.2, ease: 'easeInOut' }}
+                  />
+                </svg>
+              </motion.div>
+            </div>
+            {/* Scanning arc */}
+            <motion.div
+              className="absolute inset-0"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+            >
+              <div className="absolute top-1/2 left-1/2 h-px w-1/2 origin-left"
+                style={{ background: 'linear-gradient(90deg, rgba(16,185,129,0.4), transparent)' }} />
+            </motion.div>
+          </div>
+
+          {/* Text */}
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mt-8 text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-400/60"
+          >
+            Verifying session
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-2 flex items-center justify-center gap-1"
+          >
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="h-1 w-1 rounded-full bg-emerald-400/40"
+                animate={{ opacity: [0.2, 1, 0.2] }}
+                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+              />
+            ))}
+          </motion.div>
         </div>
       </div>
     );
