@@ -72,12 +72,16 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <motion.section variants={fadeUp} className={`${panel} p-6`}>
+    <motion.section variants={fadeUp} whileHover={{ y: -3 }} className={`${panel} p-6`}>
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.05] text-cyan-200">
+          <motion.div
+            animate={{ y: [0, -3, 0], boxShadow: ['0 0 0 rgba(34,211,238,0)', '0 0 24px rgba(34,211,238,0.12)', '0 0 0 rgba(34,211,238,0)'] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.05] text-cyan-200"
+          >
             <Icon className="h-5 w-5" />
-          </div>
+          </motion.div>
           <div>
             <h3 className="text-lg font-semibold text-white">{title}</h3>
             <p className="mt-1 text-sm text-slate-400">{caption}</p>
@@ -104,12 +108,18 @@ function MetricCard({
   return (
     <motion.div
       variants={fadeUp}
-      whileHover={{ y: -4, scale: 1.01 }}
+      whileHover={{ y: -6, scale: 1.015 }}
       transition={{ duration: 0.2 }}
       className="rounded-[28px] border border-white/8 bg-white/[0.035] p-5"
     >
       <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">{label}</p>
-      <p className={`mt-4 text-3xl font-black ${tone}`}>{value}</p>
+      <motion.p
+        animate={{ textShadow: ['0 0 0 rgba(255,255,255,0)', '0 0 18px rgba(255,255,255,0.08)', '0 0 0 rgba(255,255,255,0)'] }}
+        transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+        className={`mt-4 text-3xl font-black ${tone}`}
+      >
+        {value}
+      </motion.p>
       <p className="mt-2 text-sm text-slate-400">{helper}</p>
     </motion.div>
   );
@@ -141,7 +151,12 @@ function RankedStrip({
   return (
     <div className="space-y-3">
       {items.map((item, index) => (
-        <div key={item.label} className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3">
+        <motion.div
+          key={item.label}
+          whileHover={{ x: 4, scale: 1.01 }}
+          transition={{ duration: 0.18 }}
+          className="rounded-[22px] border border-white/8 bg-white/[0.03] p-3"
+        >
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-semibold text-white">{item.label}</p>
             <p className="text-sm font-black text-slate-100">
@@ -159,7 +174,7 @@ function RankedStrip({
               style={{ backgroundColor: color }}
             />
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -526,14 +541,23 @@ export default function AnalyticalView({
           ) : (
             <div className="space-y-3">
               {attentionMonitors.map((monitor) => (
-                <Link key={monitor.id} to={`/monitors/${monitor.id}`} className="block rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition hover:border-white/14 hover:bg-white/[0.05]">
+                <motion.div key={monitor.id} whileHover={{ y: -4, scale: 1.01 }} transition={{ duration: 0.18 }}>
+                <Link to={`/monitors/${monitor.id}`} className="block rounded-[24px] border border-white/8 bg-white/[0.03] p-4 transition hover:border-white/14 hover:bg-white/[0.05]">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white">{monitor.name}</p>
+                    <div className="flex items-center gap-3">
+                      <motion.span
+                        animate={{ opacity: [0.35, 1, 0.35], scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                        className="h-2.5 w-2.5 rounded-full bg-amber-300"
+                      />
+                      <p className="text-sm font-semibold text-white">{monitor.name}</p>
+                    </div>
                     <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-slate-200">{monitor.status}</span>
                   </div>
                   <p className="mt-2 text-sm text-slate-400">{monitor.summary}</p>
                   <p className="mt-3 text-xs text-slate-500">{formatRelativeTime(monitor.checkedAt)}</p>
                 </Link>
+                </motion.div>
               ))}
             </div>
           )}
@@ -545,7 +569,7 @@ export default function AnalyticalView({
           ) : (
             <div className="space-y-3">
               {activeChanges.map((change) => (
-                <motion.div key={change.id} whileHover={{ scale: 1.01 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                <motion.div key={change.id} whileHover={{ scale: 1.01, y: -3 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-semibold text-white">{change.title}</p>
@@ -666,7 +690,7 @@ export default function AnalyticalView({
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
             {impactIncidents.map((incident) => (
-              <motion.div key={incident.id} whileHover={{ scale: 1.01 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+              <motion.div key={incident.id} whileHover={{ scale: 1.01, y: -3 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-white">{incident.monitor.name}</p>
