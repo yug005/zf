@@ -72,18 +72,18 @@ const CreateApiKeyModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Create new API key</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#08111f] shadow-[0_30px_100px_rgba(2,8,23,0.6)]">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+          <h3 className="text-lg font-semibold text-white">Create new API key</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {mutation.isError && (
-            <div className="space-y-3 rounded-md border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+            <div className="space-y-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-200">
               <div className="flex items-start">
               <AlertTriangle className="w-5 h-5 mr-2 shrink-0" />
                 <span>{mutation.error instanceof Error ? mutation.error.message : 'Failed to generate API Key. Please try again.'}</span>
@@ -99,33 +99,33 @@ const CreateApiKeyModal = ({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Key Name</label>
+            <label className="mb-1 block text-sm font-medium text-slate-300">Key Name</label>
             <input
               required
               type="text"
               placeholder="e.g. CI/CD Deployment Script"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 shadow-sm"
               maxLength={64}
             />
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-slate-500">
               This name is strictly for your organizational convenience.
             </p>
           </div>
 
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none"
+              className="rounded-2xl border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5 focus:outline-none"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={mutation.isPending || !name.trim()}
-              className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-green-500 border border-transparent rounded-md hover:bg-green-600 focus:outline-none disabled:opacity-50"
+              className="inline-flex justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-100 hover:bg-emerald-400/20 focus:outline-none disabled:opacity-50"
             >
               {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generate Key'}
             </button>
@@ -154,17 +154,17 @@ const RawKeyRevealModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="px-6 py-5 border-b border-gray-100">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-[#08111f] shadow-[0_30px_100px_rgba(2,8,23,0.6)] animate-in fade-in zoom-in-95 duration-200">
+        <div className="border-b border-white/10 px-6 py-5">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-white">
             <CheckCircle2 className="w-6 h-6 text-green-500" />
             API Key Generated
           </h3>
         </div>
 
         <div className="p-6 space-y-6">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3 text-yellow-800 text-sm">
+          <div className="flex gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 p-4 text-sm text-amber-100">
             <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0" />
             <p>
               <strong>Store this key securely.</strong> For security reasons, you will absolutely not be able to see it again after closing this dialog. If you lose it, you must revoke it and generate a new one.
@@ -172,35 +172,35 @@ const RawKeyRevealModal = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Your secure API key</label>
+            <label className="mb-1 block text-sm font-medium text-slate-300">Your secure API key</label>
             <div className="mt-1 flex rounded-md shadow-sm">
               <div className="relative flex flex-grow items-stretch focus-within:z-10">
                 <input
                   type="text"
                   readOnly
                   value={apiKey.key}
-                  className="block w-full rounded-none rounded-l-md border-gray-300 bg-gray-50 focus:border-green-500 focus:ring-green-500 sm:text-sm font-mono text-gray-600 px-4 py-3"
+                  className="block w-full rounded-none rounded-l-2xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-slate-200 sm:text-sm"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 transition-colors w-28 justify-center"
+                className="relative -ml-px inline-flex w-28 items-center justify-center space-x-2 rounded-r-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-white/10"
               >
                 {copied ? (
                   <span className="text-green-600 font-semibold inline-flex items-center"><CheckCircle2 className="w-4 h-4 mr-1.5"/> Copied</span>
                 ) : (
-                  <span className="inline-flex items-center"><Copy className="w-4 h-4 mr-1.5 text-gray-400"/> Copy</span>
+                    <span className="inline-flex items-center"><Copy className="mr-1.5 h-4 w-4 text-slate-400"/> Copy</span>
                 )}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+        <div className="flex justify-end border-t border-white/10 bg-white/[0.03] px-6 py-4">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors"
+            className="rounded-2xl border border-white/10 bg-white/5 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10 focus:outline-none"
           >
             I have saved it securely
           </button>
@@ -252,30 +252,30 @@ export default function ApiKeys() {
   }, [subDetails]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+    <div className="mx-auto max-w-7xl space-y-6 pb-10 text-slate-100">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-white">API Keys</h1>
+          <p className="mt-1 text-sm text-slate-400">
             Securely authenticate external deployment pipelines and scripts to the Zer0Friction API.
           </p>
           {subDetails ? (
-            <p className="mt-2 text-xs font-medium text-gray-600">
-              Plan usage: <span className="text-gray-900">{apiKeyUsageLabel}</span> active keys on {subDetails.plan}.
+            <p className="mt-2 text-xs font-medium text-slate-400">
+              Plan usage: <span className="text-slate-100">{apiKeyUsageLabel}</span> active keys on {subDetails.plan}.
             </p>
           ) : null}
         </div>
         <div className="flex items-center gap-3">
           <Link
             to="/billing"
-            className="text-sm font-medium text-gray-600 underline underline-offset-2 hover:text-gray-900"
+            className="text-sm font-medium text-slate-300 underline underline-offset-2 hover:text-white"
           >
             Upgrade plan
           </Link>
           <button
             onClick={() => setCreateOpen(true)}
             disabled={Boolean(subDetails && subDetails.usage.apiKeysUsed >= subDetails.usage.apiKeysLimit)}
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md shadow-sm hover:bg-gray-800 transition-colors disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-sm font-medium text-emerald-100 shadow-sm transition-colors hover:bg-emerald-400/20 disabled:opacity-50"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create API Key
@@ -284,7 +284,7 @@ export default function ApiKeys() {
       </div>
 
       {subDetails?.status === 'TRIALING' ? (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+        <div className="rounded-2xl border border-sky-400/20 bg-sky-500/10 px-5 py-4 text-sm text-sky-100">
           Trial active: {subDetails.daysRemainingInTrial} day{subDetails.daysRemainingInTrial === 1 ? '' : 's'} left before monitoring pauses. Your API key workflows can stay configured while you evaluate the product.
         </div>
       ) : null}
@@ -295,49 +295,49 @@ export default function ApiKeys() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#08111f]/90 shadow-[0_24px_80px_rgba(2,8,23,0.38)] backdrop-blur-xl">
             {isLoading ? (
-              <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+              <div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
             ) : apiKeys.length === 0 ? (
               <div className="p-16 text-center flex flex-col items-center">
-                <Key className="w-12 h-12 text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">No active keys</h3>
-                <p className="mt-1 text-sm text-gray-500 max-w-sm mx-auto">
+                <Key className="mb-4 h-12 w-12 text-slate-500" />
+                <h3 className="text-lg font-medium text-white">No active keys</h3>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-slate-400">
                   Generate an API key to securely push configuration changes programmatically.
                 </p>
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-white/10 text-sm">
+                <thead className="bg-white/[0.03]">
                   <tr>
-                    <th className="px-6 py-4 text-left font-medium text-gray-500 uppercase tracking-wider">Key Name</th>
-                    <th className="px-6 py-4 text-left font-medium text-gray-500 uppercase tracking-wider">Prefix Handle</th>
-                    <th className="px-6 py-4 text-left font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                    <th className="px-6 py-4 text-right font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left font-medium uppercase tracking-wider text-slate-400">Key Name</th>
+                    <th className="px-6 py-4 text-left font-medium uppercase tracking-wider text-slate-400">Prefix Handle</th>
+                    <th className="px-6 py-4 text-left font-medium uppercase tracking-wider text-slate-400">Created</th>
+                    <th className="px-6 py-4 text-right font-medium uppercase tracking-wider text-slate-400">Status</th>
                     <th className="px-6 py-4"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 bg-white">
+                <tbody className="divide-y divide-white/6 bg-transparent">
                   {apiKeys.map((k) => {
                     const isRevoked = !!k.revokedAt;
                     return (
-                      <tr key={k.id} className={isRevoked ? 'bg-gray-50 opacity-60' : 'hover:bg-gray-50/50 transition-colors'}>
-                        <td className="px-6 py-4 font-medium text-gray-900">
+                      <tr key={k.id} className={isRevoked ? 'bg-white/[0.02] opacity-60' : 'transition-colors hover:bg-white/[0.03]'}>
+                        <td className="px-6 py-4 font-medium text-white">
                           {k.name}
                         </td>
-                        <td className="px-6 py-4 font-mono text-gray-500 bg-gray-50/50 rounded">
+                        <td className="px-6 py-4 font-mono text-slate-400">
                           {k.prefix}............
                         </td>
-                        <td className="px-6 py-4 text-gray-500">
+                        <td className="px-6 py-4 text-slate-400">
                           {new Date(k.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 text-right">
                           {isRevoked ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            <span className="inline-flex items-center rounded-full border border-rose-400/20 bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-200">
                               REVOKED
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-200">
                               ACTIVE
                             </span>
                           )}
@@ -351,7 +351,7 @@ export default function ApiKeys() {
                                 }
                               }}
                               disabled={revokeMutation.isPending}
-                              className="text-gray-400 hover:text-red-600 transition-colors flex items-center justify-end w-full"
+                              className="flex w-full items-center justify-end text-slate-500 transition-colors hover:text-rose-300"
                               title="Revoke Secure Key"
                             >
                               <Trash2 className="w-4 h-4 ml-auto" />
