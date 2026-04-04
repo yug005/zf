@@ -71,28 +71,28 @@ function RootRoute() {
 
 function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+    <div className="flex min-h-screen items-center justify-center bg-[#050816] px-6 text-slate-100">
       <PageMeta
         title="Page Not Found | Zer0Friction"
         description="The page you requested could not be found on Zer0Friction."
         noIndex
       />
-      <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-400">404</p>
-        <h1 className="mt-4 text-3xl font-semibold text-slate-900">This page does not exist</h1>
-        <p className="mt-3 text-sm text-slate-500">
+      <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-white/[0.04] p-10 text-center shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300/70">404</p>
+        <h1 className="mt-4 text-3xl font-semibold text-white">This page does not exist</h1>
+        <p className="mt-3 text-sm text-slate-400">
           Try the dashboard if you are signed in, or head back to the Zer0Friction homepage.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <a
             href="/"
-            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90"
           >
             Go home
           </a>
           <a
             href="/dashboard"
-            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.05]"
           >
             Open dashboard
           </a>

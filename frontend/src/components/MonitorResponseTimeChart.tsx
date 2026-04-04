@@ -19,7 +19,7 @@ export default function MonitorResponseTimeChart({ checks }: { checks: CheckResu
 
   if (displayData.length === 0) {
     return (
-      <div className="flex h-72 items-center justify-center rounded-2xl bg-slate-50 text-sm text-slate-400">
+      <div className="flex h-72 items-center justify-center rounded-[24px] border border-white/8 bg-white/[0.03] text-sm text-slate-400">
         No data available yet.
       </div>
     );
@@ -31,11 +31,11 @@ export default function MonitorResponseTimeChart({ checks }: { checks: CheckResu
         <AreaChart data={displayData}>
           <defs>
             <linearGradient id="monitorResponseFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0f766e" stopOpacity={0.28} />
-              <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+              <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
           <XAxis
             dataKey="time"
             tick={{ fontSize: 12, fill: '#64748b' }}
@@ -51,17 +51,23 @@ export default function MonitorResponseTimeChart({ checks }: { checks: CheckResu
             width={60}
           />
           <Tooltip
-            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+            contentStyle={{
+              borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(4,8,22,0.96)',
+              color: '#e2e8f0',
+              boxShadow: '0 18px 60px rgba(0,0,0,0.35)',
+            }}
             formatter={(value) => [`${value ?? 0} ms`, 'Response Time']}
           />
           <Area
             type="monotone"
             dataKey="response"
-            stroke="#0f766e"
+            stroke="#22d3ee"
             strokeWidth={3}
             fillOpacity={1}
             fill="url(#monitorResponseFill)"
-            activeDot={{ r: 6, fill: '#0f766e', stroke: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: '#22d3ee', stroke: '#020617', strokeWidth: 2 }}
           />
         </AreaChart>
       </ResponsiveContainer>
