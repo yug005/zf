@@ -13,6 +13,10 @@ import {
   Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
 } from 'recharts';
 import {
   Activity,
@@ -161,6 +165,10 @@ function RankedStrip({
   );
 }
 
+function hourLabel(dateString: string) {
+  return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function AnalyticalView({
   insights,
   monitors,
@@ -172,6 +180,39 @@ export default function AnalyticalView({
   alerts: Alert[];
   activeWatchChanges: ActiveWatchChange[];
 }) {
+  const monitorSeries = useMemo(() => {
+    return [...monitors]
+      .filter((monitor) => monitor.lastCheckedAt)
+      .sort((a, b) => new Date(a.lastCheckedAt ?? 0).getTime() - new Date(b.lastCheckedAt ?? 0).getTime())
+      .slice(-12)
+      .map((monitor) => ({
+        label: hourLabel(monitor.lastCheckedAt as string),
+        latency: monitor.avgResponseTimeMs ?? 0,
+        uptime: Number((monitor.uptimePercentage ?? 0).toFixed(1)),
+        name: monitor.name,
+      }));
+  }, [monitors]);
+
+  const eventSeries = useMemo(() => {
+    const bucketMap = new Map<string, { label: string; alerts: number; changes: number }>();
+
+    for (const alert of alerts) {
+      const key = hourLabel(alert.createdAt);
+      const current = bucketMap.get(key) ?? { label: key, alerts: 0, changes: 0 };
+      current.alerts += 1;
+      bucketMap.set(key, current);
+    }
+
+    for (const change of activeWatchChanges) {
+      const key = hourLabel(change.happenedAt);
+      const current = bucketMap.get(key) ?? { label: key, alerts: 0, changes: 0 };
+      current.changes += 1;
+      bucketMap.set(key, current);
+    }
+
+    return [...bucketMap.values()].slice(-10);
+  }, [alerts, activeWatchChanges]);
+
   const slowLane = useMemo(
     () =>
       [...monitors]
@@ -179,11 +220,9 @@ export default function AnalyticalView({
         .sort((a, b) => (b.avgResponseTimeMs ?? 0) - (a.avgResponseTimeMs ?? 0))
         .slice(0, 6)
         .map((monitor) => ({
-          shortLabel: monitor.name.length > 16 ? `${monitor.name.slice(0, 16)}...` : monitor.name,
-          fullLabel: monitor.name,
+          label: monitor.name,
           value: monitor.avgResponseTimeMs ?? 0,
-          status: monitor.status,
-          helper: formatPercentage(monitor.uptimePercentage),
+          helper: `${formatPercentage(monitor.uptimePercentage)} uptime`,
         })),
     [monitors],
   );
@@ -227,29 +266,17 @@ export default function AnalyticalView({
   );
 
   const ownerPressure = useMemo(
-    () =>
-      insights.ownerExposure.slice(0, 5).map((item) => ({
-        label: item.owner,
-        value: item.total,
-      })),
+    () => insights.ownerExposure.slice(0, 5).map((item) => ({ label: item.owner, value: item.total })),
     [insights.ownerExposure],
   );
 
   const regionPressure = useMemo(
-    () =>
-      insights.regionExposure.slice(0, 5).map((item) => ({
-        label: item.region,
-        value: item.total,
-      })),
+    () => insights.regionExposure.slice(0, 5).map((item) => ({ label: item.region, value: item.total })),
     [insights.regionExposure],
   );
 
   const slaPressure = useMemo(
-    () =>
-      insights.slaPressure.slice(0, 4).map((item) => ({
-        label: item.tier,
-        value: item.total,
-      })),
+    () => insights.slaPressure.slice(0, 4).map((item) => ({ label: item.tier, value: item.total })),
     [insights.slaPressure],
   );
 
@@ -299,7 +326,7 @@ export default function AnalyticalView({
       buckets.set(code, (buckets.get(code) || 0) + 1);
     }
     return [...buckets.entries()]
-      .map(([label, value]) => ({ label: label.replaceAll('_', ' '), value }))
+      .map(([label, value]) => ({ label: label.replaceAll('_', ' '), value, helper: 'monitors' }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
   }, [monitors]);
@@ -327,11 +354,11 @@ export default function AnalyticalView({
               Analytical mode
             </div>
             <h2 className="mt-5 max-w-2xl text-4xl font-black leading-tight text-white">
-              Clean board, enterprise density.
+              Clean board with real X-Y analytics.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-              Inspired by how serious observability products prioritize hierarchy: a few strong visuals,
-              then deep ranked detail, ownership context, alert motion, fleet composition, and drilldown surfaces.
+              This board now mixes trend charts with ranked intelligence: response movement, alert/change
+              motion, fleet posture, ownership pressure, protocol mix, and impact context.
             </p>
           </div>
 
@@ -369,8 +396,8 @@ export default function AnalyticalView({
 
       <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
         <Section
-          title="Latency slow lane"
-          caption="The monitors currently dragging the fleet, with visual ranking and side detail."
+          title="Response movement"
+          caption="Monitor check freshness plotted as a true X-Y performance trend."
           icon={Gauge}
           action={
             <Link to="/monitors" className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-200 transition hover:text-white">
@@ -378,51 +405,46 @@ export default function AnalyticalView({
             </Link>
           }
         >
-          {slowLane.length === 0 ? (
-            <EmptyState text="Latency rankings appear as checks come in." />
+          {monitorSeries.length === 0 ? (
+            <EmptyState text="Response trend appears once recent checks have been recorded." />
           ) : (
-            <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
               <div className="h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={slowLane} barCategoryGap="16%">
+                  <LineChart data={monitorSeries}>
                     <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="shortLabel" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} width={40} />
+                    <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="latency" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} width={42} />
+                    <YAxis yAxisId="uptime" orientation="right" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} width={42} />
                     <RechartsTooltip
                       contentStyle={tooltipStyle}
-                      formatter={(value) => [`${value}ms`, 'Latency']}
-                      labelFormatter={(_label, payload) => (payload?.[0]?.payload as { fullLabel?: string })?.fullLabel || ''}
+                      formatter={(value, name) => [name === 'latency' ? `${value}ms` : `${value}%`, name === 'latency' ? 'Latency' : 'Uptime']}
+                      labelFormatter={(_label, payload) => (payload?.[0]?.payload as { name?: string })?.name || ''}
                     />
-                    <Bar dataKey="value" radius={[14, 14, 0, 0]}>
-                      {slowLane.map((item) => (
-                        <Cell
-                          key={item.fullLabel}
-                          fill={
-                            item.status === 'DOWN'
-                              ? '#f43f5e'
-                              : item.status === 'DEGRADED'
-                                ? '#f59e0b'
-                                : '#22d3ee'
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                    <Line yAxisId="latency" type="monotone" dataKey="latency" stroke="#22d3ee" strokeWidth={3} dot={{ r: 4, fill: '#22d3ee' }} activeDot={{ r: 6 }} />
+                    <Line yAxisId="uptime" type="monotone" dataKey="uptime" stroke="#10b981" strokeWidth={2.5} dot={false} />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
 
               <div className="space-y-3">
-                {slowLane.map((item) => (
-                  <motion.div key={item.fullLabel} whileHover={{ x: 4 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                {monitorSeries.slice(-5).reverse().map((point) => (
+                  <div key={`${point.name}-${point.label}`} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-white">{item.fullLabel}</p>
-                      <p className="text-lg font-black text-slate-100">{item.value}ms</p>
+                      <p className="text-sm font-semibold text-white">{point.name}</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{point.label}</p>
                     </div>
-                    <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-                      <span className="uppercase tracking-[0.18em] text-slate-500">{item.status}</span>
-                      <span className="text-slate-400">{item.helper}</span>
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-2xl border border-white/8 bg-slate-950/25 px-3 py-2">
+                        <p className="text-xs text-slate-500">Latency</p>
+                        <p className="mt-1 font-black text-cyan-200">{point.latency}ms</p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-slate-950/25 px-3 py-2">
+                        <p className="text-xs text-slate-500">Uptime</p>
+                        <p className="mt-1 font-black text-emerald-200">{point.uptime}%</p>
+                      </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -434,7 +456,11 @@ export default function AnalyticalView({
             <EmptyState text="Posture appears once monitors are reporting." />
           ) : (
             <div className="grid items-center gap-5 sm:grid-cols-[1fr_1fr]">
-              <div className="h-[250px]">
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 42, repeat: Infinity, ease: 'linear' }}
+                className="h-[250px]"
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={posture} dataKey="total" nameKey="label" innerRadius={56} outerRadius={84} paddingAngle={4}>
@@ -445,7 +471,7 @@ export default function AnalyticalView({
                     <RechartsTooltip contentStyle={tooltipStyle} />
                   </PieChart>
                 </ResponsiveContainer>
-              </div>
+              </motion.div>
               <div className="space-y-3">
                 {posture.map((item, index) => (
                   <div key={item.label} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
@@ -465,6 +491,35 @@ export default function AnalyticalView({
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
+        <Section title="Alert and change motion" caption="Real event flow over time, using alerts and active changes." icon={BellRing}>
+          {eventSeries.length === 0 ? (
+            <EmptyState text="Event trend appears once alerts or change-watch events exist." />
+          ) : (
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={eventSeries}>
+                  <defs>
+                    <linearGradient id="alertsFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="changesFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.24} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
+                  <RechartsTooltip contentStyle={tooltipStyle} />
+                  <Area type="monotone" dataKey="alerts" stroke="#f43f5e" fill="url(#alertsFill)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="changes" stroke="#10b981" fill="url(#changesFill)" strokeWidth={2.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Section>
+
         <Section title="Attention deck" caption="Monitors that currently need human eyes." icon={TriangleAlert}>
           {attentionMonitors.length === 0 ? (
             <EmptyState text="No monitors are demanding attention right now." />
@@ -479,25 +534,6 @@ export default function AnalyticalView({
                   <p className="mt-2 text-sm text-slate-400">{monitor.summary}</p>
                   <p className="mt-3 text-xs text-slate-500">{formatRelativeTime(monitor.checkedAt)}</p>
                 </Link>
-              ))}
-            </div>
-          )}
-        </Section>
-
-        <Section title="Alert stream" caption="Recent state changes and operator-visible noise." icon={BellRing}>
-          {freshAlerts.length === 0 ? (
-            <EmptyState text="No fresh alerts. The stream is calm." />
-          ) : (
-            <div className="space-y-3">
-              {freshAlerts.map((alert) => (
-                <motion.div key={alert.id} whileHover={{ scale: 1.01 }} className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white">{alert.monitor.name}</p>
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-slate-200">{alert.status}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-slate-400">{alert.message}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{formatRelativeTime(alert.createdAt)}</p>
-                </motion.div>
               ))}
             </div>
           )}
@@ -536,7 +572,6 @@ export default function AnalyticalView({
                 </div>
                 <RankedStrip items={ownerPressure} color="#22d3ee" />
               </div>
-
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   <Globe2 className="h-4 w-4 text-emerald-200" />
@@ -545,7 +580,6 @@ export default function AnalyticalView({
                 <RankedStrip items={regionPressure} color="#10b981" />
               </div>
             </div>
-
             <div className="space-y-4">
               <div>
                 <div className="mb-3 flex items-center gap-2">
@@ -554,7 +588,6 @@ export default function AnalyticalView({
                 </div>
                 <RankedStrip items={slaPressure} color="#f59e0b" />
               </div>
-
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   <Target className="h-4 w-4 text-rose-200" />
@@ -566,10 +599,14 @@ export default function AnalyticalView({
           </div>
         </Section>
 
-        <Section title="Composition and quality" caption="Protocol mix, fast lane, weak uptime, and diagnosis mix." icon={Orbit}>
+        <Section title="Composition and quality" caption="Protocol mix, diagnosis spread, and quality leaders." icon={Orbit}>
           <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="space-y-4">
-              <div className="h-[220px]">
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
+                className="h-[220px]"
+              >
                 {typeMix.length === 0 ? (
                   <EmptyState text="Type mix appears once monitors exist." />
                 ) : (
@@ -584,14 +621,14 @@ export default function AnalyticalView({
                     </PieChart>
                   </ResponsiveContainer>
                 )}
-              </div>
+              </motion.div>
 
               <div>
                 <div className="mb-3 flex items-center gap-2">
                   <Zap className="h-4 w-4 text-violet-200" />
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Diagnosis mix</p>
                 </div>
-                <RankedStrip items={diagnosisMix.map((item) => ({ ...item, helper: 'monitors' }))} color="#8b5cf6" />
+                <RankedStrip items={diagnosisMix} color="#8b5cf6" />
               </div>
             </div>
 
