@@ -1,31 +1,7 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { fetchCurrentUser } from '../services/current-user';
+import { Outlet } from 'react-router-dom';
 import { PageMeta } from '../components/PageMeta';
 
 export default function AuthLayout() {
-  const { data: currentUser, isLoading, isFetching } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: fetchCurrentUser,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    retry: false,
-  });
-
-  if (isLoading || isFetching) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
-        <PageMeta title="Loading Session | Zer0Friction" noIndex />
-        <div className="h-12 w-12 animate-pulse rounded-2xl bg-white/[0.05]" />
-      </div>
-    );
-  }
-
-  if (currentUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#080c14] px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Ambient background blobs matching dashboard */}
