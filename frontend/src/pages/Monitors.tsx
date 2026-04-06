@@ -20,6 +20,7 @@ import {
 import { axiosPrivate } from '../services/api';
 import { QuickStartCard } from '../components/QuickStartCard';
 import { UpgradePrompt } from '../components/UpgradePrompt';
+import { NextCheckCountdown } from '../components/NextCheckCountdown';
 import { createMonitor, deleteMonitor, fetchMonitors, toggleMonitorPause, updateMonitor } from '../services/monitors';
 import type { CreateMonitorPayload, Monitor } from '../services/monitors';
 
@@ -563,6 +564,12 @@ export default function MonitorsList() {
                           <StatusBadge status={monitor.status} />
                         </div>
                         <p className="mt-2 truncate text-sm text-slate-500">{monitor.url}</p>
+                        <NextCheckCountdown
+                          className="mt-3"
+                          intervalSeconds={monitor.intervalSeconds}
+                          lastCheckedAt={monitor.lastCheckedAt}
+                          status={monitor.status}
+                        />
                         <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
                           <div className="rounded-[22px] border border-white/8 bg-slate-950/30 px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Latency</p><p className="mt-2 text-lg font-bold text-white">{formatResponseTime(monitor.avgResponseTimeMs)}</p></div>
                           <div className="rounded-[22px] border border-white/8 bg-slate-950/30 px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Uptime</p><p className="mt-2 text-lg font-bold text-white">{formatAvailability(monitor.uptimePercentage)}</p></div>

@@ -20,6 +20,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { axiosPrivate } from '../services/api';
+import { NextCheckCountdown } from '../components/NextCheckCountdown';
 
 const MonitorResponseTimeChart = lazy(() => import('../components/MonitorResponseTimeChart'));
 
@@ -350,6 +351,13 @@ export default function MonitorDetail() {
                 <Globe className="h-3.5 w-3.5 shrink-0" />
               </a>
             </div>
+
+            <NextCheckCountdown
+              className="mt-4"
+              intervalSeconds={monitor.intervalSeconds}
+              lastCheckedAt={monitor.lastCheckedAt}
+              status={monitor.status}
+            />
 
             <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-300">
               Review runtime health, diagnosis confidence, historical checks, alert delivery, and incident
