@@ -67,5 +67,9 @@ export function getOAuthUrl(provider: 'google' | 'github') {
 }
 
 export async function logoutSession() {
-  await axiosPrivate.post('/auth/logout');
+  try {
+    await axiosPrivate.post('/auth/logout');
+  } finally {
+    await axiosPublic.post('/auth/clear-session').catch(() => undefined);
+  }
 }
