@@ -184,13 +184,22 @@ export class AuthController {
 
   private clearAuthCookies(res: Response): void {
     const cookieOptions = this.getCookieOptions();
+    const backendHost = this.safeHostname(this.configService.get<string>('BACKEND_URL'));
+    const domainsToClear = Array.from(
+      new Set(
+        [cookieOptions.domain, backendHost, 'api.zer0friction.in', 'zf-yqpy.onrender.com'].filter(
+          (value): value is string => Boolean(value),
+        ),
+      ),
+    );
 
-    res.clearCookie(ACCESS_COOKIE, {
-      ...cookieOptions,
-    });
-    res.clearCookie(REFRESH_COOKIE, {
-      ...cookieOptions,
-    });
+    res.clearCookie(ACCESS_COOKIE, { ...cookieOptions, domain: undefined });
+    res.clearCookie(REFRESH_COOKIE, { ...cookieOptions, domain: undefined });
+
+    for (const domain of domainsToClear) {
+      res.clearCookie(ACCESS_COOKIE, { ...cookieOptions, domain });
+      res.clearCookie(REFRESH_COOKIE, { ...cookieOptions, domain });
+    }
   }
 
   private getCookieOptions() {

@@ -47,6 +47,10 @@ interface Incident {
   };
 }
 
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 const formatDateTime = (value: string) => new Date(value).toLocaleString();
 
 const formatDuration = (durationMs: number) => {
@@ -81,7 +85,7 @@ export default function Incidents() {
     queryKey: ['incidents-page'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<Incident[]>('/incidents?limit=50');
-      return data;
+      return ensureArray<Incident>(data);
     },
     refetchInterval: 15_000,
   });

@@ -60,7 +60,7 @@ export interface CreateMonitorPayload {
 
 export const fetchMonitors = async (): Promise<Monitor[]> => {
   const { data } = await axiosPrivate.get<Monitor[]>('/monitors');
-  return data;
+  return Array.isArray(data) ? data : [];
 };
 
 export const createMonitor = async (payload: CreateMonitorPayload): Promise<Monitor> => {

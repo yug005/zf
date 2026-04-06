@@ -9,6 +9,10 @@ import type { StatusPage } from '../services/status-pages';
 const shellCard =
   'rounded-3xl border border-white/10 bg-[#08111f]/90 shadow-[0_24px_80px_rgba(2,8,23,0.38)] backdrop-blur-xl';
 
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 export default function StatusPages() {
   const queryClient = useQueryClient();
   const [isModalOpen, setModalOpen] = useState(false);
@@ -17,12 +21,12 @@ export default function StatusPages() {
 
   const { data: statusPages = [], isLoading } = useQuery({
     queryKey: ['statusPages'],
-    queryFn: fetchStatusPages,
+    queryFn: async () => ensureArray<StatusPage>(await fetchStatusPages()),
   });
 
   const { data: monitors = [] } = useQuery({
     queryKey: ['monitors'],
-    queryFn: fetchMonitors,
+    queryFn: async () => ensureArray(await fetchMonitors()),
   });
 
   const createMutation = useMutation({

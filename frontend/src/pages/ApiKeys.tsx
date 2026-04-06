@@ -38,6 +38,10 @@ interface SubscriptionDetails {
   hasActiveSubscription: boolean;
 }
 
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 // --- Modals ---
 
 const CreateApiKeyModal = ({
@@ -220,7 +224,7 @@ export default function ApiKeys() {
     queryKey: ['apiKeys'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<ApiKeyMeta[]>('/api-keys');
-      return data;
+      return ensureArray<ApiKeyMeta>(data);
     },
   });
 
@@ -228,7 +232,7 @@ export default function ApiKeys() {
     queryKey: ['billingSubscription'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<SubscriptionDetails>('/billing/subscription');
-      return data;
+      return data && typeof data === 'object' ? data : null;
     },
   });
 

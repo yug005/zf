@@ -54,6 +54,10 @@ interface ChangeEvent {
   } | null;
 }
 
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 const typeTone: Record<ChangeEventType, string> = {
   DEPLOY: 'bg-sky-500/12 text-sky-200 border-sky-400/30',
   CONFIG: 'bg-amber-500/12 text-amber-200 border-amber-400/30',
@@ -93,7 +97,7 @@ export default function Changes() {
     queryKey: ['projects'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<Project[]>('/projects');
-      return data;
+      return ensureArray<Project>(data);
     },
   });
 
@@ -101,7 +105,7 @@ export default function Changes() {
     queryKey: ['monitors'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<MonitorOption[]>('/monitors');
-      return data;
+      return ensureArray<MonitorOption>(data);
     },
   });
 
@@ -109,7 +113,7 @@ export default function Changes() {
     queryKey: ['changes'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<ChangeEvent[]>('/changes?limit=50');
-      return data;
+      return ensureArray<ChangeEvent>(data);
     },
     refetchInterval: 15_000,
   });

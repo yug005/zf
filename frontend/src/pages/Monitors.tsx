@@ -43,6 +43,10 @@ interface SubscriptionDetails {
   canCreateMonitors: boolean;
 }
 
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 const surface =
   'rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] shadow-[0_24px_90px_rgba(0,0,0,0.26)] backdrop-blur-xl';
 const inputClass =
@@ -416,7 +420,7 @@ export default function MonitorsList() {
     queryKey: ['projects'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<Project[]>('/projects');
-      return data;
+      return ensureArray<Project>(data);
     },
   });
 
@@ -424,7 +428,7 @@ export default function MonitorsList() {
     queryKey: ['billingSubscription'],
     queryFn: async () => {
       const { data } = await axiosPrivate.get<SubscriptionDetails>('/billing/subscription');
-      return data;
+      return data && typeof data === 'object' ? data : null;
     },
   });
 
