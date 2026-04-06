@@ -35,12 +35,16 @@ export class UserService {
       ...user,
       subscriptionPlan: access.subscriptionPlan,
       subscriptionStatus: access.subscriptionStatus,
+      accessSource: access.accessSource,
+      accessReason: access.accessReason,
+      enterpriseAccessMode: access.enterpriseAccessMode,
       trialStartAt: access.trialStartAt,
       trialEndAt: access.trialEndAt,
       monitorLimit: access.monitorLimit,
       hasMonitoringAccess: access.hasMonitoringAccess,
       canCreateMonitors: access.canCreateMonitors,
       daysRemainingInTrial: access.daysRemainingInTrial,
+      scheduledGrant: access.grantMetadata.scheduledGrant,
       isAdmin: access.isAdmin,
     };
   }

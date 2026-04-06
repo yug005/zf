@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
+  BadgeIndianRupee,
   CreditCard,
   GitBranch,
   Globe,
@@ -10,6 +11,7 @@ import {
   LogOut,
   Menu,
   ShieldAlert,
+  ShieldCheck,
   X,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -73,7 +75,10 @@ export default function DashboardLayout() {
     { title: 'API Keys', path: '/api-keys', icon: Key },
   ];
 
-  if (!currentUser?.isAdmin) {
+  if (currentUser?.isAdmin) {
+    menu.splice(4, 0, { title: 'Admin', path: '/admin', icon: ShieldCheck });
+    menu.splice(5, 0, { title: 'Billing', path: '/billing', icon: BadgeIndianRupee });
+  } else {
     menu.splice(4, 0, { title: 'Billing', path: '/billing', icon: CreditCard });
   }
 
@@ -84,6 +89,7 @@ export default function DashboardLayout() {
     '/incidents': 'Incidents',
     '/status-pages': 'Status Pages',
     '/billing': 'Billing',
+    '/admin': 'Admin Console',
     '/api-keys': 'API Keys',
     '/expired': 'Access Expired',
   };
@@ -225,6 +231,8 @@ export default function DashboardLayout() {
                                   ? 'Response'
                                   : item.path === '/status-pages'
                                     ? 'Public comms'
+                                    : item.path === '/admin'
+                                      ? 'Support ops'
                                     : item.path === '/billing'
                                       ? 'Plan'
                                       : 'Access'}

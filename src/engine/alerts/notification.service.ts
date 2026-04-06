@@ -274,6 +274,128 @@ export class NotificationService {
     this.logger.log(`Payment failure email sent to ${email}`);
   }
 
+  async sendAdminGrantActivatedEmail(
+    email: string,
+    plan: SubscriptionPlan,
+    endAt?: Date | null,
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `${PLAN_DEFINITIONS[plan].name} access is now active`,
+      this.buildShell({
+        pretitle: 'Admin access active',
+        title: `${PLAN_DEFINITIONS[plan].name} access enabled`,
+        summary: endAt
+          ? `Support activated ${PLAN_DEFINITIONS[plan].name} access for your account through ${endAt.toLocaleDateString('en-IN')}.`
+          : `Support activated ${PLAN_DEFINITIONS[plan].name} access for your account.`,
+        accent: '#0f766e',
+        badge: 'Access live',
+        cta: { label: 'Open dashboard', href: this.buildAppUrl('/dashboard') },
+        footer: 'This access was granted manually by the Zer0Friction support/admin team.',
+      }),
+    );
+  }
+
+  async sendAdminGrantPendingEmail(
+    email: string,
+    plan: SubscriptionPlan,
+    startAt: Date,
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `${PLAN_DEFINITIONS[plan].name} access is reserved for this email`,
+      this.buildShell({
+        pretitle: 'Pending grant',
+        title: `${PLAN_DEFINITIONS[plan].name} access is waiting`,
+        summary: `An admin reserved ${PLAN_DEFINITIONS[plan].name} access for ${email}. Create or sign in to your account with this email to claim it. Planned start: ${startAt.toLocaleDateString('en-IN')}.`,
+        accent: '#2563eb',
+        badge: 'Pending',
+        cta: { label: 'Create account', href: this.buildAppUrl('/register') },
+        footer: 'If you already have an account with this email, simply sign in.',
+      }),
+    );
+  }
+
+  async sendAdminGrantQueuedEmail(
+    email: string,
+    plan: SubscriptionPlan,
+    startAt: Date,
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `${PLAN_DEFINITIONS[plan].name} access is queued`,
+      this.buildShell({
+        pretitle: 'Queued grant',
+        title: `${PLAN_DEFINITIONS[plan].name} access is scheduled`,
+        summary: `An admin queued ${PLAN_DEFINITIONS[plan].name} access for your account. It is scheduled to activate on ${startAt.toLocaleDateString('en-IN')}.`,
+        accent: '#7c3aed',
+        badge: 'Queued',
+        cta: { label: 'Open billing', href: this.buildAppUrl('/billing') },
+        footer: 'You are receiving this because your account already exists in Zer0Friction.',
+      }),
+    );
+  }
+
+  async sendAdminGrantReminderEmail(
+    email: string,
+    daysRemaining: number,
+    endAt: Date,
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      `Manual access expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`,
+      this.buildShell({
+        pretitle: 'Grant reminder',
+        title: `Manual access ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`,
+        summary: `Your current admin-provided access ends on ${endAt.toLocaleDateString('en-IN')}. Upgrade from billing if you need uninterrupted monitoring afterwards.`,
+        accent: daysRemaining === 1 ? '#dc2626' : '#d97706',
+        badge: daysRemaining === 1 ? '1 day left' : `${daysRemaining} days left`,
+        cta: { label: 'Review billing', href: this.buildAppUrl('/billing') },
+        footer: 'This is an automated reminder for a time-boxed manual access grant.',
+      }),
+    );
+  }
+
+  async sendAdminGrantExpiredEmail(email: string, plan: SubscriptionPlan): Promise<void> {
+    await this.sendEmail(
+      email,
+      `${PLAN_DEFINITIONS[plan].name} access has expired`,
+      this.buildShell({
+        pretitle: 'Grant expired',
+        title: 'Manual access has ended',
+        summary: `Your admin-provided ${PLAN_DEFINITIONS[plan].name} access has expired. Upgrade from the site to restore active monitoring.`,
+        accent: '#dc2626',
+        badge: 'Expired',
+        cta: { label: 'Choose a plan', href: this.buildAppUrl('/billing') },
+        footer: 'Your dashboard data stays preserved even after manual access ends.',
+      }),
+    );
+  }
+
+  async sendAdminGrantRevokedEmail(
+    email: string,
+    plan: SubscriptionPlan,
+    superseded = false,
+  ): Promise<void> {
+    await this.sendEmail(
+      email,
+      superseded
+        ? `${PLAN_DEFINITIONS[plan].name} access has been replaced`
+        : `${PLAN_DEFINITIONS[plan].name} access has been revoked`,
+      this.buildShell({
+        pretitle: superseded ? 'Grant replaced' : 'Grant revoked',
+        title: superseded ? 'Manual access was replaced' : 'Manual access was revoked',
+        summary: superseded
+          ? `Your previous ${PLAN_DEFINITIONS[plan].name} grant has been superseded by a newer admin access decision.`
+          : `Your admin-provided ${PLAN_DEFINITIONS[plan].name} access no longer applies to this account.`,
+        accent: '#b91c1c',
+        badge: superseded ? 'Superseded' : 'Revoked',
+        cta: { label: 'Open billing', href: this.buildAppUrl('/billing') },
+        footer: 'If this looks unexpected, reply to the support team that arranged the access.',
+      }),
+    );
+  }
+
   private async sendAlertEmail(data: AlertDeliveryJobData): Promise<void> {
     const isTriggered = data.type === 'TRIGGERED';
     const subject = `${isTriggered ? 'Monitor down' : 'Monitor recovered'}: ${data.monitorName}`;

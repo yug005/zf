@@ -10,6 +10,10 @@ import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { NotificationService } from '../../engine/alerts/notification.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { isAdminEmail } from '../../common/admin/admin.utils.js';
+import {
+  ManualAccessService,
+  ResolvedAccessWithSource,
+} from './manual-access.service.js';
 import { PLAN_LIMITS, UNBOUNDED_USAGE_LIMIT } from './constants.js';
 
 const TRIAL_DURATION_DAYS = 14;
@@ -24,20 +28,7 @@ type AccessUser = {
   monitorLimit: number;
 };
 
-export type ResolvedBillingAccess = {
-  userId: string;
-  isAdmin: boolean;
-  subscriptionPlan: SubscriptionPlan;
-  subscriptionStatus: SubscriptionStatus;
-  trialStartAt: Date;
-  trialEndAt: Date;
-  monitorLimit: number;
-  hasMonitoringAccess: boolean;
-  canCreateMonitors: boolean;
-  daysRemainingInTrial: number;
-  minimumIntervalSeconds: number;
-  apiKeyLimit: number;
-};
+export type ResolvedBillingAccess = ResolvedAccessWithSource;
 
 @Injectable()
 export class SubscriptionAccessService {
@@ -47,6 +38,7 @@ export class SubscriptionAccessService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly notificationService: NotificationService,
+    private readonly manualAccessService: ManualAccessService,
   ) {}
 
   buildTrialWindow(referenceTime = new Date()) {
@@ -110,7 +102,7 @@ export class SubscriptionAccessService {
     }
 
     const normalizedUser = await this.normalizeUserState(user);
-    return this.toResolvedAccess(normalizedUser);
+    return this.manualAccessService.resolveAccessForUser(normalizedUser);
   }
 
   async refreshStoredLimits(userId: string, subscriptionPlan: SubscriptionPlan): Promise<void> {
@@ -200,43 +192,6 @@ export class SubscriptionAccessService {
     }
 
     return user;
-  }
-
-  private toResolvedAccess(user: AccessUser): ResolvedBillingAccess {
-    const isAdmin = isAdminEmail(user.email, this.configService.get<string>('ADMIN_EMAIL'));
-    const limits = isAdmin
-      ? {
-          maxMonitors: UNBOUNDED_USAGE_LIMIT,
-          maxApiKeys: UNBOUNDED_USAGE_LIMIT,
-          minIntervalSeconds: 10,
-        }
-      : PLAN_LIMITS[user.subscriptionPlan];
-    const now = Date.now();
-    const msRemaining = Math.max(user.trialEndAt.getTime() - now, 0);
-    const daysRemainingInTrial =
-      user.subscriptionStatus === SubscriptionStatus.TRIALING
-        ? Math.max(Math.ceil(msRemaining / (24 * 60 * 60 * 1000)), 0)
-        : 0;
-    const hasMonitoringAccess =
-      isAdmin ||
-      user.subscriptionStatus === SubscriptionStatus.ACTIVE ||
-      (user.subscriptionStatus === SubscriptionStatus.TRIALING &&
-        user.trialEndAt.getTime() > now);
-
-    return {
-      userId: user.id,
-      isAdmin,
-      subscriptionPlan: isAdmin ? SubscriptionPlan.ENTERPRISE : user.subscriptionPlan,
-      subscriptionStatus: isAdmin ? SubscriptionStatus.ACTIVE : user.subscriptionStatus,
-      trialStartAt: user.trialStartAt,
-      trialEndAt: user.trialEndAt,
-      monitorLimit: isAdmin ? UNBOUNDED_USAGE_LIMIT : user.monitorLimit,
-      hasMonitoringAccess,
-      canCreateMonitors: hasMonitoringAccess,
-      daysRemainingInTrial,
-      minimumIntervalSeconds: limits.minIntervalSeconds,
-      apiKeyLimit: limits.maxApiKeys,
-    };
   }
 
   private async pauseMonitoringForUsers(userIds: string[]): Promise<void> {

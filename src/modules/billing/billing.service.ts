@@ -10,6 +10,7 @@ import { NotificationService } from '../../engine/alerts/notification.service.js
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { isAdminEmail } from '../../common/admin/admin.utils.js';
 import { PLAN_DEFINITIONS, PLAN_LIMITS, UNBOUNDED_USAGE_LIMIT } from './constants.js';
+import { ManualAccessService } from './manual-access.service.js';
 import { RazorpayService } from './razorpay.service.js';
 import { SubscriptionAccessService } from './subscription-access.service.js';
 
@@ -24,6 +25,7 @@ export class BillingService {
     private readonly configService: ConfigService,
     private readonly subscriptionAccessService: SubscriptionAccessService,
     private readonly notificationService: NotificationService,
+    private readonly manualAccessService: ManualAccessService,
   ) {
     this.planMappings = {
       [this.configService.get<string>('RAZORPAY_PLAN_ID_LITE') || 'plan_lite']:
@@ -115,9 +117,18 @@ export class BillingService {
         }
       : PLAN_LIMITS[user.subscriptionPlan];
 
+    const payg =
+      access.subscriptionPlan === SubscriptionPlan.ENTERPRISE &&
+      access.enterpriseAccessMode === 'PAYG'
+        ? await this.manualAccessService.getPaygEstimateForEmail(user.email)
+        : null;
+
     return {
       plan: access.subscriptionPlan,
       status: access.subscriptionStatus,
+      accessSource: access.accessSource,
+      accessReason: access.accessReason,
+      enterpriseAccessMode: access.enterpriseAccessMode,
       trialStartAt: user.trialStartAt,
       trialEndAt: user.trialEndAt,
       daysRemainingInTrial: access.daysRemainingInTrial,
@@ -132,6 +143,9 @@ export class BillingService {
       hasMonitoringAccess: access.hasMonitoringAccess,
       canCreateMonitors: access.canCreateMonitors,
       currentSubscriptionId: user.subscriptionId,
+      scheduledGrant: access.grantMetadata.scheduledGrant,
+      activeGrant: access.grantMetadata.activeGrant,
+      paygEstimate: payg?.currentEstimate ?? null,
     };
   }
 

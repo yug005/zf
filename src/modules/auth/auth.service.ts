@@ -14,6 +14,7 @@ import { Resend } from 'resend';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { isAdminEmail } from '../../common/admin/admin.utils.js';
 import { PLAN_LIMITS } from '../billing/constants.js';
+import { ManualAccessService } from '../billing/manual-access.service.js';
 import { SubscriptionAccessService } from '../billing/subscription-access.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -43,6 +44,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly subscriptionAccessService: SubscriptionAccessService,
+    private readonly manualAccessService: ManualAccessService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
@@ -89,6 +91,7 @@ export class AuthService {
     });
 
     await this.ensureDefaultProject(user.id);
+    await this.manualAccessService.claimPendingGrantsForUser(user.id, user.email);
 
     if (!isAdmin && verificationToken) {
       await this.sendVerificationEmail(user.email, verificationToken);
@@ -196,6 +199,7 @@ export class AuthService {
     }
 
     await this.ensureDefaultProject(user.id);
+    await this.manualAccessService.claimPendingGrantsForUser(user.id, user.email);
 
     const tokens = await this.generateTokens({
       sub: user.id,
@@ -246,6 +250,7 @@ export class AuthService {
         verificationTokenHash: null,
       },
     });
+    await this.manualAccessService.claimPendingGrantsForUser(user.id, user.email);
 
     this.logger.log(`Email verified successfully for ${user.email}`);
     return { success: true };
@@ -479,6 +484,7 @@ export class AuthService {
         },
       });
       await this.ensureDefaultProject(user.id);
+      await this.manualAccessService.claimPendingGrantsForUser(user.id, user.email);
     } else if (!user[providerIdField as keyof typeof user]) {
       user = await this.prisma.user.update({
         where: { id: user.id },
@@ -498,6 +504,8 @@ export class AuthService {
         },
       });
     }
+
+    await this.manualAccessService.claimPendingGrantsForUser(user.id, user.email);
 
     const tokens = await this.generateTokens({
       sub: user.id,
@@ -551,12 +559,16 @@ export class AuthService {
       ...user,
       subscriptionPlan: access.subscriptionPlan,
       subscriptionStatus: access.subscriptionStatus,
+      accessSource: access.accessSource,
+      accessReason: access.accessReason,
+      enterpriseAccessMode: access.enterpriseAccessMode,
       trialStartAt: access.trialStartAt,
       trialEndAt: access.trialEndAt,
       monitorLimit: access.monitorLimit,
       hasMonitoringAccess: access.hasMonitoringAccess,
       canCreateMonitors: access.canCreateMonitors,
       daysRemainingInTrial: access.daysRemainingInTrial,
+      scheduledGrant: access.grantMetadata.scheduledGrant,
       isAdmin: access.isAdmin,
     };
   }

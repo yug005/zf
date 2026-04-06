@@ -37,6 +37,7 @@ const MonitorDetail = lazy(() => import('./pages/MonitorDetail'));
 const StatusPages = lazy(() => import('./pages/StatusPages'));
 const PublicStatusPage = lazy(() => import('./pages/PublicStatusPage'));
 const Billing = lazy(() => import('./pages/Billing'));
+const Admin = lazy(() => import('./pages/Admin'));
 const ApiKeys = lazy(() => import('./pages/ApiKeys'));
 const ExpiredState = lazy(() => import('./pages/ExpiredState'));
 
@@ -146,6 +147,7 @@ function AppRouter() {
             <Route path="/monitors/:id" element={<MonitorDetail />} />
             <Route path="/status-pages" element={<StatusPages />} />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/api-keys" element={<ApiKeys />} />
             <Route path="/expired" element={<ExpiredState />} />
           </Route>

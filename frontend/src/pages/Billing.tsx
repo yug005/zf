@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ArrowRight,
   Check,
   CreditCard,
   ExternalLink,
@@ -226,6 +227,13 @@ export default function Billing() {
                 a live audit view for Razorpay webhook traffic so billing issues are visible before
                 customers feel them.
               </p>
+              <a
+                href="/admin"
+                className="mt-5 inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Open Admin Console
+                <ArrowRight className="h-4 w-4" />
+              </a>
               <div className="mt-6 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800">
                 Unlimited usage active for {currentUser.email}
               </div>

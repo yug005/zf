@@ -9,11 +9,14 @@ datasource db {
 model User {
   id                 String             @id @default(uuid())
   email              String             @unique
+  archivedEmail      String?            @map("archived_email")
   password           String
   name               String?
   avatarUrl          String?            @map("avatar_url")
   isActive           Boolean            @default(true) @map("is_active")
   isVerified         Boolean            @default(false) @map("is_verified")
+  archivedAt         DateTime?          @map("archived_at")
+  archivedReason     String?            @map("archived_reason")
   sessionVersion     Int                @default(0) @map("session_version")
   refreshTokenHash   String?            @map("refresh_token_hash")
   resetTokenHash     String?            @map("reset_token_hash")
@@ -35,8 +38,82 @@ model User {
   subscriptionReminders SubscriptionReminder[]
   inAppNotifications InAppNotification[]
   statusPages        StatusPage[]
+  adminGrants        AdminGrant[]
+  adminAuditLogs     AdminAuditLog[]    @relation("AdminAuditActor")
+  adminGrantedAccess AdminGrant[]       @relation("AdminGrantActor")
+  paygMonthlyRecords EnterprisePaygMonthlyRecord[]
 
   @@map("users")
+}
+
+model AdminGrant {
+  id                       String              @id @default(uuid())
+  email                    String
+  userId                   String?             @map("user_id")
+  plan                     SubscriptionPlan
+  enterpriseAccessMode     EnterpriseAccessMode? @map("enterprise_access_mode")
+  lifecycleStatus          GrantLifecycleStatus @default(PENDING) @map("lifecycle_status")
+  activationMode           GrantActivationMode @map("activation_mode")
+  startAt                  DateTime            @map("start_at")
+  endAt                    DateTime?           @map("end_at")
+  activatedAt              DateTime?           @map("activated_at")
+  revokedAt                DateTime?           @map("revoked_at")
+  supersededAt             DateTime?           @map("superseded_at")
+  actorUserId              String?             @map("actor_user_id")
+  actorEmail               String              @map("actor_email")
+  note                     String?
+  reason                   String?
+  lastNotificationType     String?             @map("last_notification_type")
+  lastNotificationSentAt   DateTime?           @map("last_notification_sent_at")
+  reminder7SentAt          DateTime?           @map("reminder_7_sent_at")
+  reminder1SentAt          DateTime?           @map("reminder_1_sent_at")
+  expiryNotificationSentAt DateTime?           @map("expiry_notification_sent_at")
+  createdAt                DateTime            @default(now()) @map("created_at")
+  updatedAt                DateTime            @updatedAt @map("updated_at")
+  user                     User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actor                    User?               @relation("AdminGrantActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([userId])
+  @@index([lifecycleStatus, startAt])
+  @@map("admin_grants")
+}
+
+model EnterprisePaygMonthlyRecord {
+  id                  String               @id @default(uuid())
+  userId              String?              @map("user_id")
+  email               String
+  monthStart          DateTime             @map("month_start")
+  monthEnd            DateTime             @map("month_end")
+  tenSecondCount      Int                  @default(0) @map("ten_second_count")
+  thirtySecondCount   Int                  @default(0) @map("thirty_second_count")
+  sixtyPlusCount      Int                  @default(0) @map("sixty_plus_count")
+  estimatedAmountInr  Int                  @map("estimated_amount_inr")
+  finalizedAt         DateTime?            @map("finalized_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  user                User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([email, monthStart])
+  @@index([userId, monthStart])
+  @@map("enterprise_payg_monthly_records")
+}
+
+model AdminAuditLog {
+  id            String   @id @default(uuid())
+  actorUserId    String?  @map("actor_user_id")
+  actorEmail     String   @map("actor_email")
+  action         String
+  targetUserId   String?  @map("target_user_id")
+  targetEmail    String?  @map("target_email")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  actor          User?    @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([targetEmail, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model ApiKey {
@@ -326,6 +403,25 @@ enum SubscriptionStatus {
   ACTIVE
   EXPIRED
   CANCELLED
+}
+
+enum GrantLifecycleStatus {
+  PENDING
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+  REVOKED
+  SUPERSEDED
+}
+
+enum GrantActivationMode {
+  OVERRIDE_NOW
+  ACTIVATE_AFTER_CURRENT_ACCESS
+}
+
+enum EnterpriseAccessMode {
+  STANDARD
+  PAYG
 }
 
 enum BusinessCriticality {

@@ -90,3 +90,25 @@ export const PLAN_LIMITS: Record<
     minIntervalSeconds: PLAN_DEFINITIONS[SubscriptionPlan.ENTERPRISE].minIntervalSeconds,
   },
 };
+
+export const ENTERPRISE_PAYG_RATES = {
+  minimumMonthlyAmountInr: 500,
+  tenSecondMonitorAmountInr: 180,
+  thirtySecondMonitorAmountInr: 120,
+  sixtyPlusMonitorAmountInr: 70,
+} as const;
+
+export type EnterprisePaygIntervalMix = {
+  tenSecondCount: number;
+  thirtySecondCount: number;
+  sixtyPlusCount: number;
+};
+
+export function calculateEnterprisePaygAmountInr(mix: EnterprisePaygIntervalMix): number {
+  const rawAmount =
+    mix.tenSecondCount * ENTERPRISE_PAYG_RATES.tenSecondMonitorAmountInr +
+    mix.thirtySecondCount * ENTERPRISE_PAYG_RATES.thirtySecondMonitorAmountInr +
+    mix.sixtyPlusCount * ENTERPRISE_PAYG_RATES.sixtyPlusMonitorAmountInr;
+
+  return Math.max(rawAmount, ENTERPRISE_PAYG_RATES.minimumMonthlyAmountInr);
+}

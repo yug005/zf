@@ -18,6 +18,7 @@ import { ApiKeyModule } from './modules/api-key/api-key.module.js';
 import { NotificationModule } from './modules/notifications/notification.module.js';
 import { IncidentModule } from './modules/incident/incident.module.js';
 import { ChangeModule } from './modules/change/change.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { MonitorEngineModule } from './engine/monitor-engine.module.js';
 import { JwtAccessGuard } from './modules/auth/guards/jwt-access.guard.js';
 import { StatusPagesModule } from './status-pages/status-pages.module';
@@ -77,6 +78,7 @@ import { StatusPagesModule } from './status-pages/status-pages.module';
     AlertModule,
     IncidentModule,
     ChangeModule,
+    AdminModule,
     BillingModule,
     ApiKeyModule,
     NotificationModule,
