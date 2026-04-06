@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useCallback, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { ThemeProvider } from './components/ThemeProvider';
@@ -39,6 +39,9 @@ const PublicStatusPage = lazy(() => import('./pages/PublicStatusPage'));
 const Billing = lazy(() => import('./pages/Billing'));
 const ApiKeys = lazy(() => import('./pages/ApiKeys'));
 const ExpiredState = lazy(() => import('./pages/ExpiredState'));
+
+const INITIAL_BOOT_STORAGE_KEY = 'zf-initial-boot-complete';
+const FIRST_BOOT_DURATION_MS = 2400;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,56 +105,84 @@ function NotFoundPage() {
   );
 }
 
+function AppRouter() {
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<RootRoute />} />
+          <Route path="/status/:slug" element={<PublicStatusPage />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/how-to-use" element={<HowToUse />} />
+          <Route path="/cli" element={<CliPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/website-monitoring" element={<WebsiteMonitoring />} />
+          <Route path="/api-monitoring" element={<ApiMonitoring />} />
+          <Route path="/status-pages-feature" element={<StatusPagesFeature />} />
+          <Route path="/ssl-monitoring" element={<SslMonitoring />} />
+          <Route path="/api-monitoring-tools" element={<ApiMonitoringTools />} />
+          <Route path="/vs-uptimerobot" element={<VsUptimeRobot />} />
+          <Route path="/vs-grafana" element={<VsGrafana />} />
+          <Route path="/vs-better-stack" element={<VsBetterStack />} />
+          <Route path="/vs-pingdom" element={<VsPingdom />} />
+
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/auth-success" element={<AuthSuccess />} />
+          </Route>
+
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/changes" element={<Changes />} />
+            <Route path="/incidents" element={<Incidents />} />
+            <Route path="/monitors" element={<MonitorsList />} />
+            <Route path="/monitors/:id" element={<MonitorDetail />} />
+            <Route path="/status-pages" element={<StatusPages />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/api-keys" element={<ApiKeys />} />
+            <Route path="/expired" element={<ExpiredState />} />
+          </Route>
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  );
+}
+
 export default function App() {
+  const [hasCompletedInitialBoot, setHasCompletedInitialBoot] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true;
+    }
+
+    return window.sessionStorage.getItem(INITIAL_BOOT_STORAGE_KEY) === '1';
+  });
+
+  const handleInitialBootComplete = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(INITIAL_BOOT_STORAGE_KEY, '1');
+    }
+
+    setHasCompletedInitialBoot(true);
+  }, []);
+
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<RootRoute />} />
-              <Route path="/status/:slug" element={<PublicStatusPage />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/how-to-use" element={<HowToUse />} />
-              <Route path="/cli" element={<CliPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/website-monitoring" element={<WebsiteMonitoring />} />
-              <Route path="/api-monitoring" element={<ApiMonitoring />} />
-              <Route path="/status-pages-feature" element={<StatusPagesFeature />} />
-              <Route path="/ssl-monitoring" element={<SslMonitoring />} />
-              <Route path="/api-monitoring-tools" element={<ApiMonitoringTools />} />
-              <Route path="/vs-uptimerobot" element={<VsUptimeRobot />} />
-              <Route path="/vs-grafana" element={<VsGrafana />} />
-              <Route path="/vs-better-stack" element={<VsBetterStack />} />
-              <Route path="/vs-pingdom" element={<VsPingdom />} />
-
-
-              <Route element={<AuthLayout />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/auth-success" element={<AuthSuccess />} />
-              </Route>
-
-              <Route element={<DashboardLayout />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/changes" element={<Changes />} />
-                <Route path="/incidents" element={<Incidents />} />
-                <Route path="/monitors" element={<MonitorsList />} />
-                <Route path="/monitors/:id" element={<MonitorDetail />} />
-                <Route path="/status-pages" element={<StatusPages />} />
-                <Route path="/billing" element={<Billing />} />
-                <Route path="/api-keys" element={<ApiKeys />} />
-                <Route path="/expired" element={<ExpiredState />} />
-              </Route>
-
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+        {hasCompletedInitialBoot ? (
+          <AppRouter />
+        ) : (
+          <SystemBootLoader
+            minDuration={FIRST_BOOT_DURATION_MS}
+            onComplete={handleInitialBootComplete}
+          />
+        )}
       </QueryClientProvider>
     </ThemeProvider>
   );
