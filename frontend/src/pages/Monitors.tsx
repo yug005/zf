@@ -286,9 +286,9 @@ function CreateMonitorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md">
-      <div className="flex h-full items-center justify-center p-3 sm:p-4">
-        <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[#07111f] shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md">
+      <div className="flex min-h-full items-start justify-center p-3 sm:items-center sm:p-4">
+        <div className="my-auto flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[#07111f] shadow-[0_30px_120px_rgba(0,0,0,0.55)] sm:max-h-[94vh]">
           <div className="flex items-center justify-between border-b border-white/8 px-6 py-5">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-300/70">Monitor editor</p>
@@ -299,7 +299,7 @@ function CreateMonitorModal({
             </button>
           </div>
           <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6">
               <div className="space-y-6">
                 {!projectId ? (
                   <div className="rounded-[24px] border border-amber-400/15 bg-amber-500/10 p-4 text-sm text-amber-100">

@@ -1,9 +1,10 @@
 import { Suspense, lazy, useCallback, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { ThemeProvider } from './components/ThemeProvider';
 import { PageMeta } from './components/PageMeta';
 import SystemBootLoader from './components/SystemBootLoader';
+import { fetchCurrentUser } from './services/current-user';
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
 const AuthLayout = lazy(() => import('./layouts/AuthLayout'));
@@ -53,6 +54,23 @@ function RouteFallback() {
 }
 
 function RootRoute() {
+  const { data: currentUser, isLoading, isFetching } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: fetchCurrentUser,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    retry: false,
+  });
+
+  if (isLoading || isFetching) {
+    return <RouteFallback />;
+  }
+
+  if (currentUser) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <LandingPage />;
 }
 
