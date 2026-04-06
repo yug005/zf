@@ -34,18 +34,25 @@ export default function DashboardLayout() {
   const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const { data: currentUser, isLoading: isUserLoading, isError: isUserError } = useQuery({
+  const {
+    data: currentUser,
+    isLoading: isUserLoading,
+    isFetching: isUserFetching,
+    isError: isUserError,
+  } = useQuery({
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
     retry: false,
   });
 
   useEffect(() => {
-    if (!isUserLoading && (isUserError || !currentUser)) {
+    if (!isUserLoading && !isUserFetching && (isUserError || !currentUser)) {
       navigate('/login');
     }
-  }, [currentUser, isUserLoading, isUserError, navigate]);
+  }, [currentUser, isUserLoading, isUserFetching, isUserError, navigate]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -85,7 +92,7 @@ export default function DashboardLayout() {
     ? 'Monitor Details'
     : pageTitles[location.pathname] || 'Dashboard';
 
-  if (isUserLoading) {
+  if (isUserLoading || isUserFetching) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#040611] text-white">
         <div className="pointer-events-none absolute inset-0">
@@ -113,7 +120,11 @@ export default function DashboardLayout() {
   }
 
   if (!currentUser) {
-    return null;
+    return (
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#040611] text-white">
+        <p className="text-sm text-slate-400">Redirecting to sign in...</p>
+      </div>
+    );
   }
 
   return (

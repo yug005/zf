@@ -54,14 +54,16 @@ function RouteFallback() {
 }
 
 function RootRoute() {
-  const { data: currentUser, isLoading } = useQuery({
+  const { data: currentUser, isLoading, isFetching } = useQuery({
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
     retry: false,
   });
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return <RouteFallback />;
   }
 

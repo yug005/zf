@@ -4,14 +4,16 @@ import { fetchCurrentUser } from '../services/current-user';
 import { PageMeta } from '../components/PageMeta';
 
 export default function AuthLayout() {
-  const { data: currentUser, isLoading } = useQuery({
+  const { data: currentUser, isLoading, isFetching } = useQuery({
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,
-    staleTime: 60_000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
     retry: false,
   });
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#080c14]">
         <PageMeta title="Loading Session | Zer0Friction" noIndex />
