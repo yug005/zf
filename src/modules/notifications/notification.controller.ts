@@ -5,14 +5,11 @@ import {
   Post,
   Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { JwtAccessGuard } from '../auth/guards/jwt-access.guard.js';
 import { NotificationService, InAppNotification } from './notification.service.js';
 
 @Controller('notifications')
-@UseGuards(JwtAccessGuard)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
