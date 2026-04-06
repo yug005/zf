@@ -14,10 +14,26 @@ const AnalyticalView = lazy(() => import('./AnalyticalView'));
 
 const STORAGE_KEY = 'zer0friction-dashboard-mode';
 
-const fetchMonitors = async (): Promise<Monitor[]> => { const { data } = await axiosPrivate.get('/monitors'); return data; };
-const fetchRecentAlerts = async (): Promise<Alert[]> => { const { data } = await axiosPrivate.get('/alerts?limit=8'); return data; };
-const fetchOpenIncidents = async (): Promise<Incident[]> => { const { data } = await axiosPrivate.get('/incidents?limit=8'); return data; };
-const fetchActiveWatchChanges = async (): Promise<ActiveWatchChange[]> => { const { data } = await axiosPrivate.get('/changes?limit=6&activeWatch=true'); return data; };
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+const fetchMonitors = async (): Promise<Monitor[]> => {
+  const { data } = await axiosPrivate.get('/monitors');
+  return ensureArray<Monitor>(data);
+};
+const fetchRecentAlerts = async (): Promise<Alert[]> => {
+  const { data } = await axiosPrivate.get('/alerts?limit=8');
+  return ensureArray<Alert>(data);
+};
+const fetchOpenIncidents = async (): Promise<Incident[]> => {
+  const { data } = await axiosPrivate.get('/incidents?limit=8');
+  return ensureArray<Incident>(data);
+};
+const fetchActiveWatchChanges = async (): Promise<ActiveWatchChange[]> => {
+  const { data } = await axiosPrivate.get('/changes?limit=6&activeWatch=true');
+  return ensureArray<ActiveWatchChange>(data);
+};
 
 function ModeToggleSwitch({ mode, onToggle }: { mode: DashboardMode; onToggle: () => void }) {
   return (
@@ -77,7 +93,12 @@ export default function Dashboard() {
   const { data: incidents = [], isLoading: il } = useQuery({ queryKey: ['dashboardIncidents'], queryFn: fetchOpenIncidents, refetchInterval: 10_000 });
   const { data: activeWatchChanges = [], isLoading: wl } = useQuery({ queryKey: ['activeWatchChanges'], queryFn: fetchActiveWatchChanges, refetchInterval: 10_000 });
 
-  const insights = useDashboardInsights(monitors, alerts, incidents, activeWatchChanges);
+  const safeMonitors = ensureArray<Monitor>(monitors);
+  const safeAlerts = ensureArray<Alert>(alerts);
+  const safeIncidents = ensureArray<Incident>(incidents);
+  const safeActiveWatchChanges = ensureArray<ActiveWatchChange>(activeWatchChanges);
+
+  const insights = useDashboardInsights(safeMonitors, safeAlerts, safeIncidents, safeActiveWatchChanges);
   const isLoading = ml || al || il || wl;
   const toggleMode = () => setMode((m) => m === 'compact' ? 'analytical' : 'compact');
 
@@ -119,7 +140,7 @@ export default function Dashboard() {
                 {mode === 'compact' ? 'Operational Overview' : 'Control Room'}
               </h1>
               <p className="mt-2 text-sm text-slate-500 max-w-lg">
-                {monitors.length === 0
+                {safeMonitors.length === 0
                   ? 'Create your first monitor to begin tracking uptime, latency, and incidents.'
                   : mode === 'compact'
                     ? `${insights.total} endpoints monitored. ${insights.activeIncidents.length} open incidents.`
@@ -155,14 +176,14 @@ export default function Dashboard() {
       <Suspense fallback={<DashboardSkeleton />}>
         <AnimatePresence mode="wait">
           {mode === 'compact' ? (
-            <CompactView key="compact" insights={insights} monitors={monitors} />
+            <CompactView key="compact" insights={insights} monitors={safeMonitors} />
           ) : (
             <AnalyticalView
               key="analytical"
               insights={insights}
-              monitors={monitors}
-              alerts={alerts}
-              activeWatchChanges={activeWatchChanges}
+              monitors={safeMonitors}
+              alerts={safeAlerts}
+              activeWatchChanges={safeActiveWatchChanges}
             />
           )}
         </AnimatePresence>
