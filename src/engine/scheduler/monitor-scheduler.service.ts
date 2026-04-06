@@ -39,7 +39,7 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
   ) {
     this.pollIntervalMs = this.configService.get<number>(
       'MONITOR_SCHEDULER_INTERVAL_MS',
-      30_000,
+      1_000,
     );
   }
 
