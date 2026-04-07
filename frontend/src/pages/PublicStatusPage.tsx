@@ -51,7 +51,15 @@ export default function PublicStatusPage() {
               const isDegraded = m.status === 'DEGRADED';
               return (
                 <div key={i} className="px-8 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors hover:bg-slate-50/30">
-                  <div className="font-semibold text-slate-800 text-lg">{m.name}</div>
+                  <div>
+                    <div className="font-semibold text-slate-800 text-lg">{m.name}</div>
+                    {data.mode === 'ADVANCED' ? (
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                        <span>Uptime: {typeof m.uptimePercentage === 'number' ? `${m.uptimePercentage}%` : 'N/A'}</span>
+                        <span>Latency: {typeof m.avgResponseTimeMs === 'number' ? `${m.avgResponseTimeMs}ms` : 'N/A'}</span>
+                      </div>
+                    ) : null}
+                  </div>
                   <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-wider rounded-xl px-4 py-2 ${isUp ? 'bg-emerald-100/50 text-emerald-700' : (isDegraded ? 'bg-amber-100/50 text-amber-700' : 'bg-red-100/50 text-red-700')}`}>
                     {isUp ? 'Operational' : (isDegraded ? 'Degraded' : 'Major Outage')}
                   </div>
@@ -63,6 +71,34 @@ export default function PublicStatusPage() {
             )}
           </div>
         </div>
+
+        {data.mode === 'ADVANCED' ? (
+          <div className="bg-white border text-left rounded-2xl shadow-sm overflow-hidden mb-12">
+            <div className="px-8 py-5 border-b bg-slate-50/50 flex justify-between items-center text-slate-800 font-semibold tracking-wide">
+              Latency Trends
+            </div>
+            <div className="p-8 space-y-6">
+              {data.monitors.map((monitor: any) => (
+                <div key={monitor.id}>
+                  <div className="mb-2 text-sm font-semibold text-slate-700">{monitor.name}</div>
+                  <div className="flex h-16 items-end gap-1 rounded-xl bg-slate-50 p-3">
+                    {(monitor.latencySeries || []).slice(-20).map((point: any, index: number) => (
+                      <div
+                        key={`${monitor.id}-${index}`}
+                        className={`flex-1 rounded-t ${point.status === 'SUCCESS' ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                        style={{ height: `${Math.max(8, Math.min(100, Number(point.responseTimeMs || 0) / 4))}%` }}
+                        title={`${point.responseTimeMs ?? 'N/A'}ms`}
+                      />
+                    ))}
+                    {(!monitor.latencySeries || monitor.latencySeries.length === 0) ? (
+                      <div className="text-sm text-slate-400">No latency samples yet.</div>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="bg-white border text-left rounded-2xl shadow-sm overflow-hidden mb-12">
           <div className="px-8 py-5 border-b bg-slate-50/50 flex justify-between items-center text-slate-800 font-semibold tracking-wide">

@@ -5,6 +5,7 @@ import { MonitorCheckProducer } from '../producer/monitor-check.producer.js';
 import type { MonitorCheckJobData } from '../constants.js';
 import { SubscriptionAccessService } from '../../modules/billing/subscription-access.service.js';
 import { SubscriptionStatus } from '@prisma/client';
+import { MonitorSecretService } from '../../modules/monitor/monitor-secret.service.js';
 
 /**
  * Scheduler service — periodically polls for active monitors
@@ -36,6 +37,7 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
     private readonly producer: MonitorCheckProducer,
     private readonly configService: ConfigService,
     private readonly subscriptionAccessService: SubscriptionAccessService,
+    private readonly monitorSecretService: MonitorSecretService,
   ) {
     this.pollIntervalMs = this.configService.get<number>(
       'MONITOR_SCHEDULER_INTERVAL_MS',
@@ -115,6 +117,15 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
             retries: true,
             intervalSeconds: true,
             lastCheckedAt: true,
+            authConfig: true,
+            validationConfig: true,
+            alertConfig: true,
+            probeRegions: true,
+            project: {
+              select: {
+                userId: true,
+              },
+            },
           },
           take: this.batchSize,
           skip,
@@ -136,24 +147,43 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
           if (isDue) {
             let actualBody = monitor.body;
             let keywordConfig = undefined;
+            const validationConfig = (monitor.validationConfig as Record<string, any> | null) ?? undefined;
 
             if (actualBody && typeof actualBody === 'object' && !Array.isArray(actualBody) && 'keywordConfig' in actualBody) {
               keywordConfig = (actualBody as any).keywordConfig;
               actualBody = (actualBody as any).httpBody;
             }
 
-            jobsToEnqueue.push({
-              monitorId: monitor.id,
-              type: monitor.type,
-              url: monitor.url,
-              method: monitor.httpMethod,
-              headers: (monitor.headers as Record<string, string>) ?? undefined,
-              body: actualBody ?? undefined,
-              keywordConfig,
-              timeoutMs: monitor.timeoutMs,
-              expectedStatus: monitor.expectedStatus ?? undefined,
-              retries: monitor.retries,
-            });
+            if (!keywordConfig && validationConfig?.keyword) {
+              keywordConfig = validationConfig.keyword;
+            }
+
+            const authConfig = await this.buildResolvedAuthConfig(
+              monitor.project.userId,
+              (monitor.authConfig as Record<string, any> | null) ?? undefined,
+            );
+            const probeRegions = Array.isArray(monitor.probeRegions) && monitor.probeRegions.length
+              ? (monitor.probeRegions as string[])
+              : ['default'];
+
+            for (const region of probeRegions) {
+              jobsToEnqueue.push({
+                monitorId: monitor.id,
+                type: monitor.type,
+                url: monitor.url,
+                method: monitor.httpMethod,
+                headers: (monitor.headers as Record<string, string>) ?? undefined,
+                body: actualBody ?? undefined,
+                keywordConfig,
+                validationConfig: validationConfig ?? undefined,
+                authConfig,
+                timeoutMs: monitor.timeoutMs,
+                expectedStatus: monitor.expectedStatus ?? validationConfig?.expectedStatus ?? undefined,
+                retries: monitor.retries,
+                alertConfig: (monitor.alertConfig as Record<string, any>) ?? undefined,
+                region,
+              });
+            }
             monitorIdsToMark.push(monitor.id);
           }
         }
@@ -202,5 +232,36 @@ export class MonitorSchedulerService implements OnModuleInit, OnModuleDestroy {
 
     const nextCheckAt = new Date(lastCheckedAt.getTime() + intervalSeconds * 1000);
     return now >= nextCheckAt;
+  }
+
+  private async buildResolvedAuthConfig(
+    userId: string,
+    authConfig?: Record<string, any>,
+  ): Promise<MonitorCheckJobData['authConfig'] | undefined> {
+    if (!authConfig?.type || authConfig.type === 'NONE') {
+      return undefined;
+    }
+
+    if (authConfig.type === 'BASIC') {
+      return {
+        type: 'BASIC',
+        username: (await this.monitorSecretService.resolveSecretValue(userId, authConfig.usernameSecretId)) ?? undefined,
+        password: (await this.monitorSecretService.resolveSecretValue(userId, authConfig.passwordSecretId)) ?? undefined,
+      };
+    }
+
+    if (authConfig.type === 'MULTI_STEP') {
+      return {
+        type: 'MULTI_STEP',
+        headerName: authConfig.headerName,
+        multiStep: authConfig.multiStep,
+      };
+    }
+
+    return {
+      type: authConfig.type,
+      headerName: authConfig.headerName,
+      secretValue: (await this.monitorSecretService.resolveSecretValue(userId, authConfig.secretId)) ?? undefined,
+    };
   }
 }

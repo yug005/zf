@@ -5,6 +5,7 @@ export interface StatusPage {
   id: string;
   name: string;
   slug: string;
+  mode: 'SIMPLE' | 'ADVANCED';
   userId: string;
   createdAt: string;
   monitors: { monitor: Monitor }[];
@@ -13,6 +14,7 @@ export interface StatusPage {
 export interface PublicStatusPage {
   id: string;
   name: string;
+  mode: 'SIMPLE' | 'ADVANCED';
   overallStatus: 'UP' | 'DOWN' | 'DEGRADED';
   monitors: Partial<Monitor>[];
   incidents: any[];
@@ -24,7 +26,7 @@ export const fetchStatusPages = async () => {
   return data;
 };
 
-export const createStatusPage = async (payload: { name: string; slug: string; monitorIds?: string[] }) => {
+export const createStatusPage = async (payload: { name: string; slug: string; monitorIds?: string[]; mode?: 'SIMPLE' | 'ADVANCED' }) => {
   const { data } = await axiosPrivate.post<StatusPage>('/status-pages', payload);
   return data;
 };
@@ -33,7 +35,7 @@ export const deleteStatusPage = async (id: string) => {
   await axiosPrivate.delete(`/status-pages/${id}`);
 };
 
-export const updateStatusPage = async ({ id, ...payload }: { id: string; name?: string; slug?: string; monitorIds?: string[] }) => {
+export const updateStatusPage = async ({ id, ...payload }: { id: string; name?: string; slug?: string; monitorIds?: string[]; mode?: 'SIMPLE' | 'ADVANCED' }) => {
    const { data } = await axiosPrivate.patch<StatusPage>(`/status-pages/${id}`, payload);
    return data;
 };

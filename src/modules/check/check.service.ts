@@ -73,12 +73,14 @@ export class CheckService {
         statusCode: true,
         responseTimeMs: true,
         errorMessage: true,
+        body: true,
+        metadata: true,
         checkedAt: true,
       },
     });
 
     const rows = [
-      ['id', 'checkedAt', 'status', 'statusCode', 'responseTimeMs', 'errorMessage', 'diagnosisCode', 'diagnosisSummary', 'diagnosisConfidence'],
+      ['id', 'checkedAt', 'status', 'statusCode', 'responseTimeMs', 'errorMessage', 'responseSnippet', 'diagnosisCode', 'diagnosisSummary', 'diagnosisConfidence'],
       ...checks.map((check) => {
         const diagnosis = diagnoseCheck({
           status: check.status,
@@ -93,6 +95,7 @@ export class CheckService {
           check.statusCode ?? '',
           check.responseTimeMs ?? '',
           check.errorMessage ?? '',
+          check.body ?? '',
           diagnosis?.code ?? '',
           diagnosis?.summary ?? '',
           diagnosis?.confidence ?? '',

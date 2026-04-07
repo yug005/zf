@@ -13,4 +13,8 @@ export class UpdateStatusPageDto {
   @IsArray()
   @IsUUID('4', { each: true })
   monitorIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  mode?: 'SIMPLE' | 'ADVANCED';
 }

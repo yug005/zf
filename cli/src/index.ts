@@ -1059,11 +1059,27 @@ function buildMonitorPayload(config: CliConfig, options: ParsedArgs['options']):
 
   const headers = parseJsonOption<Record<string, string>>(options, 'headers');
   const body = parseJsonOption<unknown>(options, 'body');
+  const authConfig = parseJsonOption<Record<string, unknown>>(options, 'auth-config');
+  const validationConfig = parseJsonOption<Record<string, unknown>>(options, 'validation-config');
+  const alertConfig = parseJsonOption<Record<string, unknown>>(options, 'alert-config');
+  const probeRegions = getStringOption(options, 'probe-regions');
   if (headers) {
     payload.headers = headers;
   }
   if (body !== undefined) {
     payload.body = body;
+  }
+  if (authConfig) {
+    payload.authConfig = authConfig;
+  }
+  if (validationConfig) {
+    payload.validationConfig = validationConfig;
+  }
+  if (alertConfig) {
+    payload.alertConfig = alertConfig;
+  }
+  if (probeRegions) {
+    payload.probeRegions = probeRegions.split(',').map((entry) => entry.trim()).filter(Boolean);
   }
 
   return payload;

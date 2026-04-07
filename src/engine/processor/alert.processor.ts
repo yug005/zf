@@ -18,7 +18,7 @@ export class AlertProcessor extends WorkerHost {
   }
 
   async process(job: Job<AlertDeliveryJobData>): Promise<void> {
-    const { alertId, type, monitorName } = job.data;
+    const { alertId, type, monitorName, deliveryId } = job.data;
 
     this.logger.debug(
       `Processing delivery for alert ${alertId} (${type}: ${monitorName}) - Attempt ${job.attemptsMade + 1}`,
@@ -32,6 +32,15 @@ export class AlertProcessor extends WorkerHost {
           lastDeliveryAttemptAt: new Date(),
         },
       });
+      if (deliveryId) {
+        await this.prisma.alertDelivery.update({
+          where: { id: deliveryId },
+          data: {
+            deliveryAttempts: { increment: 1 },
+            lastAttemptAt: new Date(),
+          },
+        });
+      }
 
       await this.notificationService.sendNotifications(job.data);
       await this.prisma.alert.update({
@@ -41,6 +50,16 @@ export class AlertProcessor extends WorkerHost {
           deliveryError: null,
         },
       });
+      if (deliveryId) {
+        await this.prisma.alertDelivery.update({
+          where: { id: deliveryId },
+          data: {
+            status: 'SENT',
+            deliveredAt: new Date(),
+            errorMessage: null,
+          },
+        });
+      }
       this.logger.debug(`Successfully delivered alert ${alertId}`);
     } catch (error: any) {
       await this.prisma.alert.update({
@@ -49,6 +68,15 @@ export class AlertProcessor extends WorkerHost {
           deliveryError: error.message,
         },
       }).catch(() => undefined);
+      if (deliveryId) {
+        await this.prisma.alertDelivery.update({
+          where: { id: deliveryId },
+          data: {
+            status: 'FAILED',
+            errorMessage: error.message,
+          },
+        }).catch(() => undefined);
+      }
       this.logger.error(`Error delivering alert ${alertId}: ${error.message}`);
       throw error; // Let BullMQ retry
     }

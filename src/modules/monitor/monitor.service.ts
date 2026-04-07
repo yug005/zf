@@ -4,14 +4,22 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
-import { AlertStatus, CheckStatus, MonitorStatus } from '@prisma/client';
+import { AlertStatus, CheckStatus, MonitorSecretKind, MonitorStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateMonitorDto } from './dto/create-monitor.dto.js';
 import { UpdateMonitorDto } from './dto/update-monitor.dto.js';
 import { SubscriptionAccessService } from '../billing/subscription-access.service.js';
 import { diagnoseCheck } from '../../engine/check-diagnosis.js';
+import {
+  maskSensitiveText,
+  normalizeAlertConfig,
+  normalizeAuthConfig,
+  normalizeValidationConfig,
+} from './monitor-config.js';
+import { MonitorSecretService } from './monitor-secret.service.js';
+import { executeHttpCheck } from '../../engine/executors/http.executor.js';
+import { TestMonitorConfigDto } from './dto/test-monitor-config.dto.js';
 
 const MONITOR_INSIGHT_SAMPLE_SIZE = 20;
 const RECENT_ALERT_LIMIT = 5;
@@ -23,6 +31,7 @@ export class MonitorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly subscriptionAccessService: SubscriptionAccessService,
+    private readonly monitorSecretService: MonitorSecretService,
   ) {}
 
   async create(userId: string, dto: CreateMonitorDto) {
@@ -52,6 +61,18 @@ export class MonitorService {
       `Creating monitor "${dto.name}" for project ${dto.projectId} (used ${currentMonitors}/${access.monitorLimit})`,
     );
 
+    const authConfig = await this.prepareAuthConfig(userId, normalizeAuthConfig(dto.authConfig));
+    const validationConfig =
+      normalizeValidationConfig(dto.validationConfig) ??
+      normalizeValidationConfig({
+        expectedStatus: dto.expectedStatus,
+        keyword:
+          dto.body && typeof dto.body === 'object' && !Array.isArray(dto.body) && 'keywordConfig' in dto.body
+            ? (dto.body as Record<string, unknown>).keywordConfig as any
+            : undefined,
+      });
+    const alertConfig = normalizeAlertConfig(dto.alertConfig);
+
     return this.prisma.monitor.create({
       data: {
         name: dto.name,
@@ -71,9 +92,14 @@ export class MonitorService {
         headers: dto.headers as never,
         body: dto.body as never,
         retries: dto.retries,
+        authConfig: authConfig as never,
+        validationConfig: validationConfig as never,
+        alertConfig: alertConfig as never,
+        probeRegions: (dto.probeRegions?.length ? dto.probeRegions : ['default']) as never,
         status: MonitorStatus.UP,
         isActive: true,
         pausedByBilling: false,
+        failureThreshold: alertConfig?.failureThreshold ?? 3,
         projectId: dto.projectId,
       },
     });
@@ -92,6 +118,19 @@ export class MonitorService {
        const access = await this.subscriptionAccessService.syncUserStateById(userId);
        this.subscriptionAccessService.assertIntervalAllowed(dto.intervalSeconds, access);
     }
+
+    const existingValidationConfig = (monitor.validationConfig as Record<string, unknown> | null) ?? null;
+    const existingAlertConfig = (monitor.alertConfig as Record<string, unknown> | null) ?? null;
+    const nextValidationConfig =
+      dto.validationConfig !== undefined
+        ? normalizeValidationConfig(dto.validationConfig as any)
+        : existingValidationConfig;
+    const nextAlertConfig =
+      dto.alertConfig !== undefined ? normalizeAlertConfig(dto.alertConfig) : existingAlertConfig;
+    const nextAuthConfig =
+      dto.authConfig !== undefined
+        ? await this.prepareAuthConfig(userId, normalizeAuthConfig(dto.authConfig as any))
+        : undefined;
 
     return this.prisma.monitor.update({
       where: { id },
@@ -113,6 +152,14 @@ export class MonitorService {
         headers: dto.headers as any,
         body: dto.body as any,
         retries: dto.retries,
+        authConfig: nextAuthConfig as any,
+        validationConfig: nextValidationConfig as any,
+        alertConfig: nextAlertConfig as any,
+        probeRegions: dto.probeRegions !== undefined ? (dto.probeRegions as any) : undefined,
+        failureThreshold:
+          nextAlertConfig && typeof nextAlertConfig === 'object' && 'failureThreshold' in nextAlertConfig
+            ? ((nextAlertConfig as Record<string, unknown>).failureThreshold as number | undefined)
+            : undefined,
       },
     });
   }
@@ -142,6 +189,8 @@ export class MonitorService {
             responseTimeMs: true,
             errorMessage: true,
             checkedAt: true,
+            body: true,
+            metadata: true,
           },
         },
         alerts: {
@@ -158,6 +207,17 @@ export class MonitorService {
             deliveryError: true,
             createdAt: true,
             resolvedAt: true,
+            deliveries: {
+              select: {
+                id: true,
+                channel: true,
+                status: true,
+                recipient: true,
+                deliveryAttempts: true,
+                deliveredAt: true,
+                errorMessage: true,
+              },
+            },
           },
         },
       },
@@ -181,6 +241,8 @@ export class MonitorService {
             responseTimeMs: true,
             errorMessage: true,
             checkedAt: true,
+            body: true,
+            metadata: true,
           },
         },
         alerts: {
@@ -197,6 +259,17 @@ export class MonitorService {
             deliveryError: true,
             createdAt: true,
             resolvedAt: true,
+            deliveries: {
+              select: {
+                id: true,
+                channel: true,
+                status: true,
+                recipient: true,
+                deliveryAttempts: true,
+                deliveredAt: true,
+                errorMessage: true,
+              },
+            },
           },
         },
       },
@@ -269,6 +342,41 @@ export class MonitorService {
     return { success: true };
   }
 
+  async testConfiguration(userId: string, dto: TestMonitorConfigDto) {
+    const authConfig = await this.buildResolvedTestAuthConfig(userId, dto.authConfig as any);
+    const result = await executeHttpCheck({
+      monitorId: 'preview',
+      type: 'HTTP',
+      url: dto.url,
+      method: dto.httpMethod ?? 'GET',
+      headers: dto.headers ?? {},
+      body: dto.body,
+      validationConfig: dto.validationConfig as any,
+      keywordConfig: dto.validationConfig?.keyword as any,
+      authConfig: authConfig ?? undefined,
+      timeoutMs: dto.timeoutMs ?? 10000,
+      expectedStatus: dto.validationConfig?.expectedStatus,
+      retries: 0,
+      region: 'preview',
+    });
+
+    return {
+      success: result.success,
+      statusCode: result.statusCode ?? null,
+      responseTimeMs: result.responseTimeMs,
+      errorMessage: result.errorMessage ?? null,
+      metadata: result.metadata
+        ? {
+            ...result.metadata,
+            responseSnippet:
+              typeof result.metadata.responseSnippet === 'string'
+                ? maskSensitiveText(result.metadata.responseSnippet)
+                : result.metadata.responseSnippet,
+          }
+        : null,
+    };
+  }
+
   private async verifyProjectOwnership(projectId: string, userId: string): Promise<void> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -294,6 +402,10 @@ export class MonitorService {
       region?: string | null;
       businessCriticality?: string;
       slaTier?: string;
+      authConfig?: any;
+      validationConfig?: any;
+      alertConfig?: any;
+      probeRegions?: unknown;
       checkResults: Array<{
         id: string;
         status: CheckStatus;
@@ -301,6 +413,8 @@ export class MonitorService {
         responseTimeMs: number | null;
         errorMessage: string | null;
         checkedAt: Date;
+        body?: string | null;
+        metadata?: any;
       }>;
       alerts: Array<{
         id: string;
@@ -313,6 +427,15 @@ export class MonitorService {
         deliveryError: string | null;
         createdAt: Date;
         resolvedAt: Date | null;
+        deliveries?: Array<{
+          id: string;
+          channel: string;
+          status: string;
+          recipient: string | null;
+          deliveryAttempts: number;
+          deliveredAt: Date | null;
+          errorMessage: string | null;
+        }>;
       }>;
       [key: string]: unknown;
     },
@@ -355,7 +478,13 @@ export class MonitorService {
       successfulChecksCount: successfulChecks.length,
       latestStatusCode: latestCheck?.statusCode ?? null,
       lastErrorMessage: latestCheck?.errorMessage ?? null,
+      latestResponseSnippet: latestCheck?.body ?? null,
+      latestCheckMetadata: latestCheck?.metadata ?? null,
       latestDiagnosis,
+      authConfig: monitor.authConfig ?? null,
+      validationConfig: monitor.validationConfig ?? null,
+      alertConfig: monitor.alertConfig ?? null,
+      probeRegions: Array.isArray(monitor.probeRegions) ? monitor.probeRegions : ['default'],
       hasActiveAlert: alerts.some((alert) => alert.status !== AlertStatus.RESOLVED),
       latestAlert: latestAlert
         ? {
@@ -369,9 +498,90 @@ export class MonitorService {
             deliveryError: latestAlert.deliveryError,
             createdAt: latestAlert.createdAt,
             resolvedAt: latestAlert.resolvedAt,
+            deliveries: latestAlert.deliveries ?? [],
           }
         : null,
       recentAlerts: alerts,
+    };
+  }
+
+  private async prepareAuthConfig(userId: string, authConfig: ReturnType<typeof normalizeAuthConfig>) {
+    if (!authConfig) {
+      return null;
+    }
+
+    const nextConfig: Record<string, unknown> = { ...authConfig };
+
+    if (authConfig.secretValue) {
+      const secret = await this.monitorSecretService.createSecret(
+        userId,
+        `monitor-${authConfig.type.toLowerCase()}-secret`,
+        authConfig.secretValue,
+        authConfig.type === 'API_KEY' ? MonitorSecretKind.API_KEY : MonitorSecretKind.TOKEN,
+      );
+      nextConfig.secretId = secret.id;
+      delete nextConfig.secretValue;
+    }
+
+    if (authConfig.username) {
+      const secret = await this.monitorSecretService.createSecret(
+        userId,
+        'monitor-basic-username',
+        authConfig.username,
+        MonitorSecretKind.BASIC_USERNAME,
+      );
+      nextConfig.usernameSecretId = secret.id;
+      delete nextConfig.username;
+    }
+
+    if (authConfig.password) {
+      const secret = await this.monitorSecretService.createSecret(
+        userId,
+        'monitor-basic-password',
+        authConfig.password,
+        MonitorSecretKind.BASIC_PASSWORD,
+      );
+      nextConfig.passwordSecretId = secret.id;
+      delete nextConfig.password;
+    }
+
+    return nextConfig;
+  }
+
+  private async buildResolvedTestAuthConfig(userId: string, authConfig?: Record<string, any> | null) {
+    if (!authConfig?.type || authConfig.type === 'NONE') {
+      return undefined;
+    }
+
+    if (authConfig.type === 'BASIC') {
+      return {
+        type: 'BASIC' as const,
+        username:
+          authConfig.username ??
+          (await this.monitorSecretService.resolveSecretValue(userId, authConfig.usernameSecretId)) ??
+          undefined,
+        password:
+          authConfig.password ??
+          (await this.monitorSecretService.resolveSecretValue(userId, authConfig.passwordSecretId)) ??
+          undefined,
+      };
+    }
+
+    if (authConfig.type === 'MULTI_STEP') {
+      return {
+        type: 'MULTI_STEP' as const,
+        headerName: authConfig.headerName,
+        multiStep: authConfig.multiStep,
+      };
+    }
+
+    return {
+      type: authConfig.type,
+      headerName: authConfig.headerName,
+      secretValue:
+        authConfig.secretValue ??
+        (await this.monitorSecretService.resolveSecretValue(userId, authConfig.secretId)) ??
+        undefined,
     };
   }
 }

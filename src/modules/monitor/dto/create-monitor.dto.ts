@@ -1,14 +1,184 @@
 import {
   IsString,
-  IsUrl,
   IsOptional,
   IsEnum,
   IsInt,
-  IsObject,
   IsUUID,
   Min,
   Max,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+  IsEmail,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class AuthRequestTemplateDto {
+  @IsString()
+  url!: string;
+
+  @IsOptional()
+  @IsEnum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'])
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+
+  @IsOptional()
+  headers?: Record<string, string>;
+
+  @IsOptional()
+  body?: unknown;
+}
+
+class MultiStepAuthConfigDto {
+  @ValidateNested()
+  @Type(() => AuthRequestTemplateDto)
+  login!: AuthRequestTemplateDto;
+
+  @IsString()
+  tokenJsonPath!: string;
+
+  @IsOptional()
+  @IsString()
+  targetHeader?: string;
+
+  @IsOptional()
+  @IsString()
+  tokenPrefix?: string;
+}
+
+class AuthConfigDto {
+  @IsEnum(['NONE', 'BEARER', 'API_KEY', 'BASIC', 'MULTI_STEP'])
+  type!: 'NONE' | 'BEARER' | 'API_KEY' | 'BASIC' | 'MULTI_STEP';
+
+  @IsOptional()
+  @IsString()
+  secretId?: string;
+
+  @IsOptional()
+  @IsString()
+  secretValue?: string;
+
+  @IsOptional()
+  @IsString()
+  usernameSecretId?: string;
+
+  @IsOptional()
+  @IsString()
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  passwordSecretId?: string;
+
+  @IsOptional()
+  @IsString()
+  password?: string;
+
+  @IsOptional()
+  @IsString()
+  headerName?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MultiStepAuthConfigDto)
+  multiStep?: MultiStepAuthConfigDto;
+}
+
+class KeywordValidationConfigDto {
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  required?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  forbidden?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  stripHtml?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  matchExact?: boolean;
+}
+
+class JsonPathRuleDto {
+  @IsString()
+  path!: string;
+
+  @IsEnum(['EXISTS', 'EQUALS', 'CONTAINS'])
+  operator!: 'EXISTS' | 'EQUALS' | 'CONTAINS';
+
+  @IsOptional()
+  expectedValue?: unknown;
+}
+
+class ValidationConfigDto {
+  @IsOptional()
+  @IsInt()
+  expectedStatus?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  latencyThresholdMs?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => KeywordValidationConfigDto)
+  keyword?: KeywordValidationConfigDto;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => JsonPathRuleDto)
+  jsonPaths?: JsonPathRuleDto[];
+}
+
+class AlertRecipientConfigDto {
+  @IsOptional()
+  @IsArray()
+  @IsEmail({}, { each: true })
+  emails?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  slackWebhookUrls?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  telegramChatIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  whatsappNumbers?: string[];
+}
+
+class AlertConfigDto {
+  @IsOptional()
+  @IsArray()
+  @IsEnum(['EMAIL', 'SLACK', 'TELEGRAM', 'WEBHOOK', 'SMS', 'WHATSAPP'], { each: true })
+  channels?: Array<'EMAIL' | 'SLACK' | 'TELEGRAM' | 'WEBHOOK' | 'SMS' | 'WHATSAPP'>;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  failureThreshold?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  retryIntervalSeconds?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AlertRecipientConfigDto)
+  recipients?: AlertRecipientConfigDto;
+}
 
 export class CreateMonitorDto {
   @IsString()
@@ -74,6 +244,26 @@ export class CreateMonitorDto {
 
   @IsOptional()
   body?: any;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AuthConfigDto)
+  authConfig?: AuthConfigDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ValidationConfigDto)
+  validationConfig?: ValidationConfigDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AlertConfigDto)
+  alertConfig?: AlertConfigDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  probeRegions?: string[];
 
   @IsOptional()
   @IsInt()

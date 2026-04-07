@@ -59,7 +59,7 @@ async function bootstrap() {
 
 function validateEnvironment(configService: ConfigService, logger: Logger) {
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
-  const requiredEverywhere = ['DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+  const requiredEverywhere = ['DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'MONITOR_SECRET_KEY'];
   const requiredInProduction = ['FRONTEND_URL', 'BACKEND_URL', 'RESEND_API_KEY'];
 
   const missing = [

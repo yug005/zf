@@ -12,6 +12,7 @@ import { AlertsModule } from './alerts/alerts.module.js';
 import { LogCleanupCron } from './cron/log-cleanup.cron.js';
 import { SubscriptionReminderCron } from './cron/subscription-reminder.cron.js';
 import { BillingModule } from '../modules/billing/billing.module.js';
+import { MonitorModule } from '../modules/monitor/monitor.module.js';
 
 /**
  * MonitorEngineModule — the core monitoring execution pipeline.
@@ -54,6 +55,7 @@ import { BillingModule } from '../modules/billing/billing.module.js';
       }),
     }),
     BillingModule,
+    MonitorModule,
     AlertsModule,
   ],
   providers: [

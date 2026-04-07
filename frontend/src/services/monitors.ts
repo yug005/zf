@@ -38,6 +38,12 @@ export interface Monitor {
   lastErrorMessage?: string | null;
   latestDiagnosis?: CheckDiagnosis | null;
   body?: any;
+  authConfig?: any;
+  validationConfig?: any;
+  alertConfig?: any;
+  probeRegions?: string[];
+  latestResponseSnippet?: string | null;
+  latestCheckMetadata?: Record<string, unknown> | null;
 }
 
 export interface CreateMonitorPayload {
@@ -56,6 +62,30 @@ export interface CreateMonitorPayload {
   timeoutMs: number;
   projectId: string;
   body?: any;
+  expectedStatus?: number;
+  retries?: number;
+  authConfig?: any;
+  validationConfig?: any;
+  alertConfig?: any;
+  probeRegions?: string[];
+}
+
+export interface TestMonitorPayload {
+  url: string;
+  httpMethod?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  timeoutMs?: number;
+  authConfig?: any;
+  validationConfig?: any;
+}
+
+export interface TestMonitorResult {
+  success: boolean;
+  statusCode: number | null;
+  responseTimeMs: number;
+  errorMessage: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export const fetchMonitors = async (): Promise<Monitor[]> => {
@@ -80,4 +110,11 @@ export const updateMonitor = async ({ id, ...payload }: Partial<CreateMonitorPay
 export const toggleMonitorPause = async ({ id, isPaused }: { id: string; isPaused: boolean }): Promise<void> => {
   const endpoint = isPaused ? `/monitors/${id}/resume` : `/monitors/${id}/pause`;
   await axiosPrivate.patch(endpoint);
+};
+
+export const testMonitorConfiguration = async (
+  payload: TestMonitorPayload,
+): Promise<TestMonitorResult> => {
+  const { data } = await axiosPrivate.post<TestMonitorResult>('/monitors/test-config', payload);
+  return data;
 };

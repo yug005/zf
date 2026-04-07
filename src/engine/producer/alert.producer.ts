@@ -28,7 +28,7 @@ export class AlertProducer {
 
     // Use Redis SET NX with EX to throttle alerts per monitor
     // We throttle TRIGGERED and RESOLVED separately so we don't accidentally swallow a recovery just because an alert just fired.
-    const throttleKey = `throttle:alert:${data.monitorId}:${data.type}`;
+    const throttleKey = `throttle:alert:${data.monitorId}:${data.type}:${data.channel ?? 'ALL'}`;
     
     // Set NX (Not eXists), EX (Expire in seconds)
     const acquired = await client.set(throttleKey, '1', 'EX', this.throttleTtlSeconds, 'NX');

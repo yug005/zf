@@ -17,7 +17,7 @@ export default function StatusPages() {
   const queryClient = useQueryClient();
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<StatusPage | null>(null);
-  const [formData, setFormData] = useState({ name: '', slug: '', monitorIds: [] as string[] });
+  const [formData, setFormData] = useState({ name: '', slug: '', monitorIds: [] as string[], mode: 'SIMPLE' as 'SIMPLE' | 'ADVANCED' });
 
   const { data: statusPages = [], isLoading } = useQuery({
     queryKey: ['statusPages'],
@@ -36,7 +36,7 @@ export default function StatusPages() {
       queryClient.invalidateQueries({ queryKey: ['statusPages'] });
       setModalOpen(false);
       setEditingPage(null);
-      setFormData({ name: '', slug: '', monitorIds: [] });
+      setFormData({ name: '', slug: '', monitorIds: [], mode: 'SIMPLE' });
     },
   });
 
@@ -82,6 +82,7 @@ export default function StatusPages() {
                         name: page.name,
                         slug: page.slug,
                         monitorIds: page.monitors.map((m: { monitor: { id: string } }) => m.monitor.id),
+                        mode: page.mode || 'SIMPLE',
                       });
                       setModalOpen(true);
                     }}
@@ -101,7 +102,10 @@ export default function StatusPages() {
                   </button>
                 </div>
               </div>
-              <div className="mb-4 text-sm text-slate-400">Monitors: {page.monitors?.length || 0}</div>
+              <div className="mb-4 space-y-1 text-sm text-slate-400">
+                <div>Monitors: {page.monitors?.length || 0}</div>
+                <div>Mode: {page.mode}</div>
+              </div>
               <Link
                 to={`/status/${page.slug}`}
                 target="_blank"
@@ -175,6 +179,17 @@ export default function StatusPages() {
                   ))}
                 </select>
                 <p className="mt-1 text-xs text-slate-500">Hold Ctrl/Cmd to select multiple</p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-300">Page Mode</label>
+                <select
+                  value={formData.mode}
+                  onChange={(e) => setFormData({ ...formData, mode: e.target.value as 'SIMPLE' | 'ADVANCED' })}
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100"
+                >
+                  <option value="SIMPLE">Simple</option>
+                  <option value="ADVANCED">Advanced</option>
+                </select>
               </div>
 
               {createMutation.isError ? (

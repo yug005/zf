@@ -3,6 +3,7 @@ import { MonitorService } from './monitor.service.js';
 import { CreateMonitorDto } from './dto/create-monitor.dto.js';
 import { UpdateMonitorDto } from './dto/update-monitor.dto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { TestMonitorConfigDto } from './dto/test-monitor-config.dto.js';
 
 @Controller('monitors')
 export class MonitorController {
@@ -18,6 +19,14 @@ export class MonitorController {
     @Body() dto: CreateMonitorDto,
   ) {
     return this.monitorService.create(userId, dto);
+  }
+
+  @Post('test-config')
+  async testConfig(
+    @CurrentUser('id') userId: string,
+    @Body() dto: TestMonitorConfigDto,
+  ) {
+    return this.monitorService.testConfiguration(userId, dto);
   }
 
   /**

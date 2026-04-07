@@ -20,6 +20,7 @@ export class StatusPagesService {
         userId,
         name: dto.name,
         slug: dto.slug,
+        mode: dto.mode ?? 'SIMPLE',
         monitors: {
           create: dto.monitorIds?.map(id => ({ monitorId: id })) || [],
         },
@@ -70,6 +71,7 @@ export class StatusPagesService {
         data: {
           name: dto.name,
           slug: dto.slug,
+          mode: dto.mode,
         },
       });
     });
@@ -104,7 +106,22 @@ export class StatusPagesService {
         monitors: {
           include: {
             monitor: {
-              select: { id: true, name: true, url: true, status: true, expectedStatus: true }
+              select: {
+                id: true,
+                name: true,
+                url: true,
+                status: true,
+                expectedStatus: true,
+                checkResults: {
+                  take: 50,
+                  orderBy: { checkedAt: 'desc' },
+                  select: {
+                    responseTimeMs: true,
+                    status: true,
+                    checkedAt: true,
+                  },
+                },
+              }
             }
           }
         }
@@ -133,8 +150,38 @@ export class StatusPagesService {
     return {
       id: page.id,
       name: page.name,
+      mode: page.mode,
       overallStatus,
-      monitors: mappedMonitors,
+      monitors: mappedMonitors.map((monitor) => {
+        const successfulChecks = monitor.checkResults.filter((check) => check.status === 'SUCCESS');
+        const responseTimes = monitor.checkResults
+          .map((check) => check.responseTimeMs)
+          .filter((value): value is number => typeof value === 'number' && value > 0);
+
+        return {
+          id: monitor.id,
+          name: monitor.name,
+          url: monitor.url,
+          status: monitor.status,
+          expectedStatus: monitor.expectedStatus,
+          uptimePercentage: monitor.checkResults.length
+            ? Number(((successfulChecks.length / monitor.checkResults.length) * 100).toFixed(1))
+            : null,
+          avgResponseTimeMs: responseTimes.length
+            ? Math.round(responseTimes.reduce((sum, value) => sum + value, 0) / responseTimes.length)
+            : null,
+          latencySeries: page.mode === 'ADVANCED'
+            ? monitor.checkResults
+                .slice()
+                .reverse()
+                .map((check) => ({
+                  checkedAt: check.checkedAt,
+                  responseTimeMs: check.responseTimeMs,
+                  status: check.status,
+                }))
+            : undefined,
+        };
+      }),
       incidents,
       updatedAt: new Date().toISOString()
     };

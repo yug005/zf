@@ -64,6 +64,8 @@ interface Monitor {
   latestDiagnosis?: CheckDiagnosis | null;
   hasActiveAlert?: boolean;
   recentAlerts?: MonitorAlertSummary[];
+  latestResponseSnippet?: string | null;
+  latestCheckMetadata?: Record<string, unknown> | null;
   impactMetadata?: {
     serviceName?: string | null;
     featureName?: string | null;
@@ -406,6 +408,25 @@ export default function MonitorDetail() {
               </div>
             ) : (
               <EmptyState text="No diagnosis has been generated yet. This endpoint currently looks healthy." />
+            )}
+          </Panel>
+
+          <Panel title="Failure evidence" subtitle="Masked response details and execution metadata from the latest check." icon={AlertTriangle}>
+            {monitor.latestResponseSnippet || monitor.latestCheckMetadata ? (
+              <div className="space-y-4">
+                {monitor.latestResponseSnippet ? (
+                  <pre className="overflow-x-auto rounded-[24px] border border-white/8 bg-slate-950/40 p-4 text-xs text-slate-200">
+                    {monitor.latestResponseSnippet}
+                  </pre>
+                ) : null}
+                {monitor.latestCheckMetadata ? (
+                  <pre className="overflow-x-auto rounded-[24px] border border-white/8 bg-slate-950/40 p-4 text-xs text-slate-400">
+                    {JSON.stringify(monitor.latestCheckMetadata, null, 2)}
+                  </pre>
+                ) : null}
+              </div>
+            ) : (
+              <EmptyState text="No masked response evidence captured yet." />
             )}
           </Panel>
 

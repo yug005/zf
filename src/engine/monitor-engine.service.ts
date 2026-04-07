@@ -12,6 +12,7 @@ type EngineMonitor = {
   status: MonitorStatus;
   consecutiveFailures: number;
   failureThreshold: number;
+  alertConfig?: any;
   project: { user: { email: string } };
 };
 
@@ -54,6 +55,11 @@ export class MonitorEngineService {
         statusCode: result.statusCode ?? null,
         responseTimeMs: result.responseTimeMs,
         errorMessage: result.errorMessage ?? null,
+        body:
+          typeof result.metadata?.responseSnippet === 'string'
+            ? result.metadata.responseSnippet
+            : null,
+        metadata: (result.metadata as any) ?? null,
         checkedAt: new Date(),
       },
     });
@@ -68,6 +74,7 @@ export class MonitorEngineService {
         status: true,
         consecutiveFailures: true,
         failureThreshold: true,
+        alertConfig: true,
         project: {
           select: {
             user: { select: { email: true } },
@@ -186,10 +193,13 @@ export class MonitorEngineService {
   ): Promise<void> {
     const message = `Monitor "${monitor.name}" is DOWN after ${failureCount} consecutive failures. Likely cause: ${diagnosis ? `${diagnosis.summary} (${diagnosis.confidence}% confidence)` : result.errorMessage ?? 'Unknown'}`;
 
+    const channels = this.resolveAlertChannels(monitor);
+    const recipients = this.resolveRecipients(monitor);
+
     const alert = await this.prisma.alert.create({
       data: {
         monitorId: monitor.id,
-        channel: AlertChannel.EMAIL,
+        channel: (channels[0] as AlertChannel) ?? AlertChannel.EMAIL,
         status: AlertStatus.TRIGGERED,
         message,
         metadata: {
@@ -200,24 +210,39 @@ export class MonitorEngineService {
           failureCount,
           threshold: monitor.failureThreshold,
           triggeredAt: new Date().toISOString(),
+          channels,
+          recipients,
         } as any,
+        deliveries: {
+          create: channels.map((channel) => ({
+            channel: channel as AlertChannel,
+            recipient: recipients[channel]?.[0] ?? null,
+          })),
+        },
+      },
+      include: {
+        deliveries: true,
       },
     });
 
-    // Enqueue an alert delivery job
-    await this.alertProducer.enqueueAlert({
-      alertId: alert.id,
-      monitorId: monitor.id,
-      monitorName: monitor.name,
-      monitorUrl: monitor.url,
-      type: 'TRIGGERED',
-      message,
-      timestamp: new Date().toISOString(),
-      metadata: {
-        recipientEmail: monitor.project.user.email,
-        statusCode: result.statusCode,
-      },
-    });
+    for (const delivery of alert.deliveries) {
+      await this.alertProducer.enqueueAlert({
+        alertId: alert.id,
+        deliveryId: delivery.id,
+        monitorId: monitor.id,
+        monitorName: monitor.name,
+        monitorUrl: monitor.url,
+        type: 'TRIGGERED',
+        channel: delivery.channel,
+        message,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          recipientEmail: monitor.project.user.email,
+          statusCode: result.statusCode,
+          recipients,
+        },
+      });
+    }
   }
 
   /**
@@ -245,22 +270,32 @@ export class MonitorEngineService {
       },
     });
 
-    // Usually we just need one notification for the monitor recovering, 
-    // even if there were multiple triggered alerts overlapping.
     const message = `Monitor "${monitor.name}" has RECOVERED.`;
-    await this.alertProducer.enqueueAlert({
-      alertId: alertIds[0], // pass the first resolved alert id
-      monitorId: monitor.id,
-      monitorName: monitor.name,
-      monitorUrl: monitor.url,
-      type: 'RESOLVED',
-      message: message,
-      timestamp: new Date().toISOString(),
-      metadata: {
-        recipientEmail: monitor.project.user.email,
-        resolvedAlertCount: alertIds.length,
-      },
+    const primaryAlert = await this.prisma.alert.findUnique({
+      where: { id: alertIds[0] },
+      include: { deliveries: true },
     });
+
+    if (primaryAlert) {
+      for (const delivery of primaryAlert.deliveries) {
+        await this.alertProducer.enqueueAlert({
+          alertId: alertIds[0],
+          deliveryId: delivery.id,
+          monitorId: monitor.id,
+          monitorName: monitor.name,
+          monitorUrl: monitor.url,
+          type: 'RESOLVED',
+          channel: delivery.channel,
+          message,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            recipientEmail: monitor.project.user.email,
+            resolvedAlertCount: alertIds.length,
+            recipients: this.resolveRecipients(monitor),
+          },
+        });
+      }
+    }
 
     return alertIds.length;
   }
@@ -275,5 +310,27 @@ export class MonitorEngineService {
     if (result.errorMessage?.includes('Timeout')) return CheckStatus.TIMEOUT;
     if (result.errorMessage?.includes('DNS') || result.errorMessage?.includes('Connection refused')) return CheckStatus.ERROR;
     return CheckStatus.FAILURE;
+  }
+
+  private resolveAlertChannels(monitor: EngineMonitor): string[] {
+    const configured = monitor.alertConfig?.channels;
+    if (Array.isArray(configured) && configured.length > 0) {
+      return configured.filter((channel) => typeof channel === 'string');
+    }
+
+    return [AlertChannel.EMAIL, AlertChannel.SLACK, 'TELEGRAM', AlertChannel.WHATSAPP];
+  }
+
+  private resolveRecipients(monitor: EngineMonitor): Record<string, string[]> {
+    const recipients = monitor.alertConfig?.recipients ?? {};
+    return {
+      EMAIL: Array.isArray(recipients.emails) && recipients.emails.length
+        ? recipients.emails
+        : [monitor.project.user.email],
+      SLACK: Array.isArray(recipients.slackWebhookUrls) ? recipients.slackWebhookUrls : [],
+      TELEGRAM: Array.isArray(recipients.telegramChatIds) ? recipients.telegramChatIds : [],
+      WHATSAPP: Array.isArray(recipients.whatsappNumbers) ? recipients.whatsappNumbers : [],
+      SMS: Array.isArray(recipients.whatsappNumbers) ? recipients.whatsappNumbers : [],
+    };
   }
 }

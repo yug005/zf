@@ -21,8 +21,20 @@ import { axiosPrivate } from '../services/api';
 import { QuickStartCard } from '../components/QuickStartCard';
 import { UpgradePrompt } from '../components/UpgradePrompt';
 import { NextCheckCountdown } from '../components/NextCheckCountdown';
-import { createMonitor, deleteMonitor, fetchMonitors, toggleMonitorPause, updateMonitor } from '../services/monitors';
-import type { CreateMonitorPayload, Monitor } from '../services/monitors';
+import {
+  createMonitor,
+  deleteMonitor,
+  fetchMonitors,
+  testMonitorConfiguration,
+  toggleMonitorPause,
+  updateMonitor,
+} from '../services/monitors';
+import type {
+  CreateMonitorPayload,
+  Monitor,
+  TestMonitorPayload,
+  TestMonitorResult,
+} from '../services/monitors';
 
 interface Project {
   id: string;
@@ -43,6 +55,34 @@ interface SubscriptionDetails {
   hasMonitoringAccess: boolean;
   canCreateMonitors: boolean;
 }
+
+type AuthType = 'NONE' | 'BEARER' | 'API_KEY' | 'BASIC' | 'MULTI_STEP';
+type AlertChannel = 'EMAIL' | 'SLACK' | 'TELEGRAM' | 'WHATSAPP';
+
+type MonitorFormState = CreateMonitorPayload & {
+  rawBody: string;
+  headersText: string;
+  authType: AuthType;
+  authHeaderName: string;
+  authSecretValue: string;
+  basicUsername: string;
+  basicPassword: string;
+  latencyThresholdMs: string;
+  requiredKeywords: string;
+  forbiddenKeywords: string;
+  jsonPath: string;
+  jsonPathExpectedValue: string;
+  emailRecipients: string;
+  slackWebhookUrls: string;
+  telegramChatIds: string;
+  whatsappNumbers: string;
+  retryIntervalSeconds: string;
+  alertChannels: AlertChannel[];
+  rawAuthConfig: string;
+  rawValidationConfig: string;
+  rawAlertConfig: string;
+  probeRegionsText: string;
+};
 
 function ensureArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
@@ -85,6 +125,141 @@ const typeTone: Record<Monitor['type'], string> = {
   DNS: 'text-amber-200 border-amber-400/15 bg-amber-500/10',
   SSL: 'text-emerald-200 border-emerald-400/15 bg-emerald-500/10',
 };
+
+function defaultFormState(
+  projectId: string | undefined,
+  minimumIntervalSeconds: number,
+): MonitorFormState {
+  return {
+    name: '',
+    url: '',
+    type: 'HTTP',
+    httpMethod: 'GET',
+    serviceName: '',
+    featureName: '',
+    customerJourney: '',
+    teamOwner: '',
+    region: '',
+    businessCriticality: 'MEDIUM',
+    slaTier: 'STANDARD',
+    intervalSeconds: minimumIntervalSeconds,
+    timeoutMs: 5000,
+    expectedStatus: 200,
+    retries: 0,
+    projectId: projectId || '',
+    body: undefined,
+    authConfig: undefined,
+    validationConfig: undefined,
+    alertConfig: undefined,
+    probeRegions: ['default'],
+    rawBody: '',
+    headersText: '',
+    authType: 'NONE',
+    authHeaderName: 'Authorization',
+    authSecretValue: '',
+    basicUsername: '',
+    basicPassword: '',
+    latencyThresholdMs: '',
+    requiredKeywords: '',
+    forbiddenKeywords: '',
+    jsonPath: '',
+    jsonPathExpectedValue: '',
+    emailRecipients: '',
+    slackWebhookUrls: '',
+    telegramChatIds: '',
+    whatsappNumbers: '',
+    retryIntervalSeconds: '30',
+    alertChannels: ['EMAIL'],
+    rawAuthConfig: '',
+    rawValidationConfig: '',
+    rawAlertConfig: '',
+    probeRegionsText: 'default',
+  };
+}
+
+function parseJsonInput(raw: string, label: string) {
+  if (!raw.trim()) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error(`${label} must be valid JSON.`);
+  }
+}
+
+function parseBodyInput(raw: string) {
+  if (!raw.trim()) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function parseHeadersText(raw: string): Record<string, string> | undefined {
+  if (!raw.trim()) {
+    return undefined;
+  }
+
+  const headers = raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .reduce<Record<string, string>>((acc, line) => {
+      const separatorIndex = line.indexOf(':');
+      if (separatorIndex <= 0) {
+        throw new Error('Each header must use "Name: Value" format.');
+      }
+      const key = line.slice(0, separatorIndex).trim();
+      const value = line.slice(separatorIndex + 1).trim();
+      acc[key] = value;
+      return acc;
+    }, {});
+
+  return Object.keys(headers).length ? headers : undefined;
+}
+
+function parseCsv(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function stringifyJson(value: unknown) {
+  return value ? JSON.stringify(value, null, 2) : '';
+}
+
+function stringifyHeaders(headers: unknown): string {
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers)) {
+    return '';
+  }
+
+  return Object.entries(headers as Record<string, unknown>)
+    .map(([key, value]) => `${key}: ${String(value ?? '')}`)
+    .join('\n');
+}
+
+function formatTestResult(result: TestMonitorResult) {
+  if (result.success) {
+    return `Healthy response in ${result.responseTimeMs}ms`;
+  }
+
+  if (result.errorMessage) {
+    return result.errorMessage;
+  }
+
+  if (typeof result.statusCode === 'number') {
+    return `Request failed with status ${result.statusCode}`;
+  }
+
+  return 'Request failed';
+}
 
 function TypeIcon({ type }: { type: Monitor['type'] }) {
   const map = { HTTP: Globe, TCP: Server, DNS: Search, SSL: Shield };
@@ -131,6 +306,52 @@ function TypeBadge({ type }: { type: Monitor['type'] }) {
       <TypeIcon type={type} />
       {type}
     </span>
+  );
+}
+
+function Field({
+  label,
+  children,
+  hint,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  hint?: string;
+  className?: string;
+}) {
+  return (
+    <label className={className}>
+      <span className="mb-2 block text-sm font-semibold text-slate-300">{label}</span>
+      {children}
+      {hint ? <span className="mt-2 block text-xs text-slate-500">{hint}</span> : null}
+    </label>
+  );
+}
+
+function ChannelToggle({
+  label,
+  value,
+  checked,
+  onChange,
+}: {
+  label: string;
+  value: AlertChannel;
+  checked: boolean;
+  onChange: (value: AlertChannel) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(value)}
+      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+        checked
+          ? 'border-cyan-400/30 bg-cyan-400/15 text-cyan-100'
+          : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -184,90 +405,227 @@ function CreateMonitorModal({
   initialData?: Monitor | null;
 }) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<CreateMonitorPayload & { rawBody?: string }>({
-    name: '',
-    url: '',
-    type: 'HTTP',
-    httpMethod: 'GET',
-    serviceName: '',
-    featureName: '',
-    customerJourney: '',
-    teamOwner: '',
-    region: '',
-    businessCriticality: 'MEDIUM',
-    slaTier: 'STANDARD',
-    intervalSeconds: minimumIntervalSeconds,
-    timeoutMs: 5000,
-    projectId: projectId || '',
-    rawBody: '',
-  });
+  const [formData, setFormData] = useState<MonitorFormState>(() =>
+    defaultFormState(projectId, minimumIntervalSeconds),
+  );
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
-    if (initialData) {
-      setFormData({
-        name: initialData.name,
-        url: initialData.url,
-        type: initialData.type,
-        httpMethod: initialData.httpMethod,
-        serviceName: initialData.impactMetadata?.serviceName || '',
-        featureName: initialData.impactMetadata?.featureName || '',
-        customerJourney: initialData.impactMetadata?.customerJourney || '',
-        teamOwner: initialData.impactMetadata?.teamOwner || '',
-        region: initialData.impactMetadata?.region || '',
-        businessCriticality: initialData.impactMetadata?.businessCriticality || 'MEDIUM',
-        slaTier: initialData.impactMetadata?.slaTier || 'STANDARD',
-        intervalSeconds: initialData.intervalSeconds,
-        timeoutMs: initialData.timeoutMs,
-        projectId: projectId || '',
-        rawBody: initialData.body ? JSON.stringify(initialData.body) : '',
-      });
+
+    if (!initialData) {
+      setFormData(defaultFormState(projectId, minimumIntervalSeconds));
+      setAdvancedOpen(false);
       return;
     }
 
+    const authConfig = (initialData.authConfig as Record<string, any> | null) ?? null;
+    const validationConfig = (initialData.validationConfig as Record<string, any> | null) ?? null;
+    const alertConfig = (initialData.alertConfig as Record<string, any> | null) ?? null;
+    const recipients = (alertConfig?.recipients as Record<string, string[]> | undefined) ?? {};
+    const simpleJsonPath =
+      Array.isArray(validationConfig?.jsonPaths) && validationConfig.jsonPaths.length === 1
+        ? validationConfig.jsonPaths[0]
+        : null;
+
     setFormData({
-      name: '',
-      url: '',
-      type: 'HTTP',
-      httpMethod: 'GET',
-      serviceName: '',
-      featureName: '',
-      customerJourney: '',
-      teamOwner: '',
-      region: '',
-      businessCriticality: 'MEDIUM',
-      slaTier: 'STANDARD',
-      intervalSeconds: minimumIntervalSeconds,
-      timeoutMs: 5000,
+      name: initialData.name,
+      url: initialData.url,
+      type: initialData.type,
+      httpMethod: initialData.httpMethod,
+      serviceName: initialData.impactMetadata?.serviceName || '',
+      featureName: initialData.impactMetadata?.featureName || '',
+      customerJourney: initialData.impactMetadata?.customerJourney || '',
+      teamOwner: initialData.impactMetadata?.teamOwner || '',
+      region: initialData.impactMetadata?.region || '',
+      businessCriticality: initialData.impactMetadata?.businessCriticality || 'MEDIUM',
+      slaTier: initialData.impactMetadata?.slaTier || 'STANDARD',
+      intervalSeconds: initialData.intervalSeconds,
+      timeoutMs: initialData.timeoutMs,
+      expectedStatus: initialData.validationConfig?.expectedStatus || 200,
+      retries: (initialData as any).retries || 0,
       projectId: projectId || '',
-      rawBody: '',
+      body: initialData.body,
+      authConfig: authConfig ?? undefined,
+      validationConfig: validationConfig ?? undefined,
+      alertConfig: alertConfig ?? undefined,
+      probeRegions: initialData.probeRegions || ['default'],
+      rawBody: initialData.body ? stringifyJson(initialData.body) : '',
+      headersText: stringifyHeaders((initialData as any).headers),
+      authType: (authConfig?.type as AuthType) || 'NONE',
+      authHeaderName: authConfig?.headerName || 'Authorization',
+      authSecretValue: '',
+      basicUsername: '',
+      basicPassword: '',
+      latencyThresholdMs:
+        typeof validationConfig?.latencyThresholdMs === 'number'
+          ? String(validationConfig.latencyThresholdMs)
+          : '',
+      requiredKeywords: Array.isArray(validationConfig?.keyword?.required)
+        ? validationConfig.keyword.required.join(', ')
+        : '',
+      forbiddenKeywords: Array.isArray(validationConfig?.keyword?.forbidden)
+        ? validationConfig.keyword.forbidden.join(', ')
+        : '',
+      jsonPath: simpleJsonPath?.path || '',
+      jsonPathExpectedValue:
+        simpleJsonPath?.expectedValue !== undefined ? JSON.stringify(simpleJsonPath.expectedValue) : '',
+      emailRecipients: Array.isArray(recipients.emails) ? recipients.emails.join(', ') : '',
+      slackWebhookUrls: Array.isArray(recipients.slackWebhookUrls)
+        ? recipients.slackWebhookUrls.join(', ')
+        : '',
+      telegramChatIds: Array.isArray(recipients.telegramChatIds)
+        ? recipients.telegramChatIds.join(', ')
+        : '',
+      whatsappNumbers: Array.isArray(recipients.whatsappNumbers)
+        ? recipients.whatsappNumbers.join(', ')
+        : '',
+      retryIntervalSeconds:
+        typeof alertConfig?.retryIntervalSeconds === 'number'
+          ? String(alertConfig.retryIntervalSeconds)
+          : '30',
+      alertChannels:
+        Array.isArray(alertConfig?.channels) && alertConfig.channels.length
+          ? (alertConfig.channels.filter((channel: string) =>
+              ['EMAIL', 'SLACK', 'TELEGRAM', 'WHATSAPP'].includes(channel),
+            ) as AlertChannel[])
+          : ['EMAIL'],
+      rawAuthConfig: authConfig ? stringifyJson(authConfig) : '',
+      rawValidationConfig: validationConfig ? stringifyJson(validationConfig) : '',
+      rawAlertConfig: alertConfig ? stringifyJson(alertConfig) : '',
+      probeRegionsText: (initialData.probeRegions || ['default']).join(', '),
     });
+    setAdvancedOpen(false);
   }, [initialData, isOpen, minimumIntervalSeconds, projectId]);
 
   const saveMutation = useMutation({
     mutationFn: (payload: Partial<CreateMonitorPayload>) =>
       initialData ? updateMonitor({ id: initialData.id, ...payload }) : createMonitor(payload as CreateMonitorPayload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['monitors'] });
-      queryClient.invalidateQueries({ queryKey: ['billingSubscription'] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['monitors'] }),
+        queryClient.invalidateQueries({ queryKey: ['billingSubscription'] }),
+      ]);
       onClose();
     },
   });
 
+  const testMutation = useMutation({
+    mutationFn: (payload: TestMonitorPayload) => testMonitorConfiguration(payload),
+  });
+
   if (!isOpen) return null;
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    let finalBody = undefined;
-    if (formData.rawBody?.trim()) {
-      try {
-        finalBody = JSON.parse(formData.rawBody);
-      } catch {
-        finalBody = formData.rawBody;
-      }
+  const buildPayload = () => {
+    const body = parseBodyInput(formData.rawBody);
+    const headers = parseHeadersText(formData.headersText);
+    const parsedRawAuthConfig = parseJsonInput(formData.rawAuthConfig, 'Advanced auth config');
+    const parsedRawValidationConfig = parseJsonInput(
+      formData.rawValidationConfig,
+      'Advanced validation config',
+    ) as Record<string, unknown> | undefined;
+    const parsedRawAlertConfig = parseJsonInput(
+      formData.rawAlertConfig,
+      'Advanced alert config',
+    ) as Record<string, unknown> | undefined;
+
+    let authConfig: Record<string, unknown> | undefined;
+    if (formData.authType === 'BEARER' || formData.authType === 'API_KEY') {
+      authConfig = {
+        type: formData.authType,
+        headerName: formData.authType === 'API_KEY' ? formData.authHeaderName || 'x-api-key' : 'Authorization',
+        secretValue: formData.authSecretValue || undefined,
+      };
+    } else if (formData.authType === 'BASIC') {
+      authConfig = {
+        type: 'BASIC',
+        username: formData.basicUsername || undefined,
+        password: formData.basicPassword || undefined,
+      };
+    } else if (formData.authType === 'MULTI_STEP') {
+      authConfig = parsedRawAuthConfig as Record<string, unknown> | undefined;
+    } else {
+      authConfig = { type: 'NONE' };
     }
 
-    saveMutation.mutate({
+    const validationConfig: Record<string, unknown> = {
+      expectedStatus: formData.expectedStatus,
+    };
+
+    if (formData.latencyThresholdMs.trim()) {
+      validationConfig.latencyThresholdMs = Number(formData.latencyThresholdMs);
+    }
+
+    const requiredKeywords = parseCsv(formData.requiredKeywords);
+    const forbiddenKeywords = parseCsv(formData.forbiddenKeywords);
+    if (requiredKeywords.length || forbiddenKeywords.length) {
+      validationConfig.keyword = {
+        required: requiredKeywords,
+        forbidden: forbiddenKeywords,
+      };
+    }
+
+    if (formData.jsonPath.trim()) {
+      let expectedValue: unknown = undefined;
+      if (formData.jsonPathExpectedValue.trim()) {
+        try {
+          expectedValue = JSON.parse(formData.jsonPathExpectedValue);
+        } catch {
+          expectedValue = formData.jsonPathExpectedValue;
+        }
+      }
+      validationConfig.jsonPaths = [
+        {
+          path: formData.jsonPath.trim(),
+          operator: expectedValue === undefined ? 'EXISTS' : 'EQUALS',
+          expectedValue,
+        },
+      ];
+    }
+
+    const alertConfig: Record<string, unknown> = {
+      channels: formData.alertChannels.length ? formData.alertChannels : ['EMAIL'],
+      retryIntervalSeconds: Number(formData.retryIntervalSeconds || 30),
+      recipients: {
+        emails: parseCsv(formData.emailRecipients),
+        slackWebhookUrls: parseCsv(formData.slackWebhookUrls),
+        telegramChatIds: parseCsv(formData.telegramChatIds),
+        whatsappNumbers: parseCsv(formData.whatsappNumbers),
+      },
+    };
+
+    const mergedAuthConfig =
+      formData.authType === 'MULTI_STEP'
+        ? authConfig
+        : parsedRawAuthConfig
+          ? { ...authConfig, ...(parsedRawAuthConfig as Record<string, unknown>) }
+          : authConfig;
+
+    const mergedValidationConfig = parsedRawValidationConfig
+      ? {
+          ...validationConfig,
+          ...parsedRawValidationConfig,
+          keyword: {
+            ...((validationConfig.keyword as Record<string, unknown> | undefined) ?? {}),
+            ...(((parsedRawValidationConfig.keyword as Record<string, unknown> | undefined) ?? {})),
+          },
+        }
+      : validationConfig;
+
+    const mergedAlertConfig = parsedRawAlertConfig
+      ? {
+          ...alertConfig,
+          ...parsedRawAlertConfig,
+          recipients: {
+            ...((alertConfig.recipients as Record<string, unknown> | undefined) ?? {}),
+            ...(((parsedRawAlertConfig.recipients as Record<string, unknown> | undefined) ?? {})),
+          },
+        }
+      : alertConfig;
+
+    const probeRegions = parseCsv(formData.probeRegionsText);
+
+    const payload: CreateMonitorPayload = {
       name: formData.name,
       url: formData.url,
       type: formData.type,
@@ -281,115 +639,364 @@ function CreateMonitorModal({
       slaTier: formData.slaTier,
       intervalSeconds: formData.intervalSeconds,
       timeoutMs: formData.timeoutMs,
-      body: finalBody,
-      ...(initialData ? {} : { projectId: projectId || '' }),
-    });
+      projectId: projectId || '',
+      body,
+      expectedStatus: formData.expectedStatus,
+      retries: formData.retries,
+      authConfig: mergedAuthConfig,
+      validationConfig: mergedValidationConfig,
+      alertConfig: mergedAlertConfig,
+      probeRegions: probeRegions.length ? probeRegions : ['default'],
+    };
+
+    return {
+      payload,
+      testPayload: {
+        url: payload.url,
+        httpMethod: payload.httpMethod,
+        headers,
+        body,
+        timeoutMs: payload.timeoutMs,
+        authConfig: payload.authConfig,
+        validationConfig: payload.validationConfig,
+      } satisfies TestMonitorPayload,
+      headers,
+    };
+  };
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const { payload, headers } = buildPayload();
+    saveMutation.mutate({
+      ...payload,
+      headers,
+    } as Partial<CreateMonitorPayload>);
+  };
+
+  const runTest = async () => {
+    const { testPayload } = buildPayload();
+    await testMutation.mutateAsync(testPayload);
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-md">
       <div className="flex min-h-full items-start justify-center p-3 sm:items-center sm:p-4">
-        <div className="my-auto flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[#07111f] shadow-[0_30px_120px_rgba(0,0,0,0.55)] sm:max-h-[94vh]">
+        <div className="my-auto flex max-h-[calc(100vh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[32px] border border-white/10 bg-[#07111f] shadow-[0_30px_120px_rgba(0,0,0,0.55)] sm:max-h-[94vh]">
           <div className="flex items-center justify-between border-b border-white/8 px-6 py-5">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-300/70">Monitor editor</p>
               <h2 className="mt-2 text-2xl font-black text-white">{initialData ? 'Tune monitor' : 'Create monitor'}</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Add the endpoint, optional headers, test it, then save. Advanced JSON stays available when you need it.
+              </p>
             </div>
             <button onClick={onClose} className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.08] hover:text-white">
               <X className="h-5 w-5" />
             </button>
           </div>
+
           <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-              <div className="space-y-6">
-                {!projectId ? (
-                  <div className="rounded-[24px] border border-amber-400/15 bg-amber-500/10 p-4 text-sm text-amber-100">
-                    No project is attached to this session yet. Refresh your workspace or create a project before adding monitors.
-                  </div>
-                ) : null}
+              <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+                <div className="space-y-6">
+                  {!projectId ? (
+                    <div className="rounded-[24px] border border-amber-400/15 bg-amber-500/10 p-4 text-sm text-amber-100">
+                      No project is attached to this session yet. Refresh your workspace or create a project before adding monitors.
+                    </div>
+                  ) : null}
 
-                {saveMutation.isError ? (
-                  <div className="rounded-[24px] border border-rose-400/15 bg-rose-500/10 p-4 text-sm text-rose-200">
-                    {saveMutation.error instanceof Error ? saveMutation.error.message : 'Could not save this monitor.'}
-                  </div>
-                ) : null}
+                  {saveMutation.isError ? (
+                    <div className="rounded-[24px] border border-rose-400/15 bg-rose-500/10 p-4 text-sm text-rose-200">
+                      {saveMutation.error instanceof Error ? saveMutation.error.message : 'Could not save this monitor.'}
+                    </div>
+                  ) : null}
 
-                <section className={`${surface} p-5`}>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Core setup</p>
-                  <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="md:col-span-2">
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">Monitor name</label>
-                      <input required value={formData.name} onChange={(e) => setFormData((current) => ({ ...current, name: e.target.value }))} className={inputClass} placeholder="Production API" />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">Monitor type</label>
-                      <select value={formData.type} onChange={(e) => setFormData((current) => ({ ...current, type: e.target.value as Monitor['type'] }))} className={inputClass}>
-                        <option value="HTTP">HTTP</option>
-                        <option value="TCP">TCP</option>
-                        <option value="DNS">DNS</option>
-                        <option value="SSL">SSL</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">HTTP method</label>
-                      <select value={formData.httpMethod} onChange={(e) => setFormData((current) => ({ ...current, httpMethod: e.target.value }))} className={inputClass}>
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="PATCH">PATCH</option>
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">Target URL</label>
-                      <input required type="url" value={formData.url} onChange={(e) => setFormData((current) => ({ ...current, url: e.target.value }))} className={inputClass} placeholder="https://api.example.com/health" />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">Interval (seconds)</label>
-                      <input required type="number" min={minimumIntervalSeconds} value={formData.intervalSeconds} onChange={(e) => setFormData((current) => ({ ...current, intervalSeconds: Number(e.target.value) }))} className={inputClass} />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">Timeout (ms)</label>
-                      <input required type="number" min={1000} max={120000} value={formData.timeoutMs} onChange={(e) => setFormData((current) => ({ ...current, timeoutMs: Number(e.target.value) }))} className={inputClass} />
-                    </div>
-                  </div>
-                </section>
-
-                {(formData.type === 'HTTP' || formData.type === 'DNS') && (
                   <section className={`${surface} p-5`}>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Payload and request options</p>
-                    <textarea rows={5} value={formData.rawBody} onChange={(e) => setFormData((current) => ({ ...current, rawBody: e.target.value }))} placeholder={formData.type === 'DNS' ? '{"recordType":"A","expectedValue":"1.1.1.1"}' : '{"keywordConfig":{"required":["success"]}}'} className={`${inputClass} mt-4 font-mono`} />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Core setup</p>
+                    <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Field label="Monitor name" className="md:col-span-2">
+                        <input required value={formData.name} onChange={(e) => setFormData((current) => ({ ...current, name: e.target.value }))} className={inputClass} placeholder="Production API" />
+                      </Field>
+                      <Field label="Monitor type">
+                        <select value={formData.type} onChange={(e) => setFormData((current) => ({ ...current, type: e.target.value as Monitor['type'] }))} className={inputClass}>
+                          <option value="HTTP">HTTP</option>
+                          <option value="TCP">TCP</option>
+                          <option value="DNS">DNS</option>
+                          <option value="SSL">SSL</option>
+                        </select>
+                      </Field>
+                      <Field label="HTTP method">
+                        <select value={formData.httpMethod} onChange={(e) => setFormData((current) => ({ ...current, httpMethod: e.target.value }))} className={inputClass}>
+                          <option value="GET">GET</option>
+                          <option value="POST">POST</option>
+                          <option value="PUT">PUT</option>
+                          <option value="PATCH">PATCH</option>
+                          <option value="DELETE">DELETE</option>
+                        </select>
+                      </Field>
+                      <Field label="Target URL" className="md:col-span-2">
+                        <input required type="url" value={formData.url} onChange={(e) => setFormData((current) => ({ ...current, url: e.target.value }))} className={inputClass} placeholder="https://api.example.com/health" />
+                      </Field>
+                      <Field label="Interval (seconds)">
+                        <input required type="number" min={minimumIntervalSeconds} value={formData.intervalSeconds} onChange={(e) => setFormData((current) => ({ ...current, intervalSeconds: Number(e.target.value) }))} className={inputClass} />
+                      </Field>
+                      <Field label="Expected status">
+                        <input type="number" min={100} max={599} value={formData.expectedStatus || 200} onChange={(e) => setFormData((current) => ({ ...current, expectedStatus: Number(e.target.value) }))} className={inputClass} />
+                      </Field>
+                      <Field label="Timeout (ms)">
+                        <input required type="number" min={1000} max={120000} value={formData.timeoutMs} onChange={(e) => setFormData((current) => ({ ...current, timeoutMs: Number(e.target.value) }))} className={inputClass} />
+                      </Field>
+                      <Field label="Retries before alert">
+                        <input type="number" min={0} max={5} value={formData.retries || 0} onChange={(e) => setFormData((current) => ({ ...current, retries: Number(e.target.value) }))} className={inputClass} />
+                      </Field>
+                    </div>
                   </section>
-                )}
 
-                <section className={`${surface} p-5`}>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Impact mapping</p>
-                  <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div><label className="mb-2 block text-sm font-semibold text-slate-300">Service</label><input value={formData.serviceName || ''} onChange={(e) => setFormData((current) => ({ ...current, serviceName: e.target.value }))} className={inputClass} placeholder="Checkout API" /></div>
-                    <div><label className="mb-2 block text-sm font-semibold text-slate-300">Feature</label><input value={formData.featureName || ''} onChange={(e) => setFormData((current) => ({ ...current, featureName: e.target.value }))} className={inputClass} placeholder="Customer payments" /></div>
-                    <div><label className="mb-2 block text-sm font-semibold text-slate-300">Customer journey</label><input value={formData.customerJourney || ''} onChange={(e) => setFormData((current) => ({ ...current, customerJourney: e.target.value }))} className={inputClass} placeholder="Sign-up to checkout" /></div>
-                    <div><label className="mb-2 block text-sm font-semibold text-slate-300">Team owner</label><input value={formData.teamOwner || ''} onChange={(e) => setFormData((current) => ({ ...current, teamOwner: e.target.value }))} className={inputClass} placeholder="Growth Engineering" /></div>
-                    <div><label className="mb-2 block text-sm font-semibold text-slate-300">Region</label><input value={formData.region || ''} onChange={(e) => setFormData((current) => ({ ...current, region: e.target.value }))} className={inputClass} placeholder="India / APAC" /></div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">Business criticality</label>
-                      <select value={formData.businessCriticality || 'MEDIUM'} onChange={(e) => setFormData((current) => ({ ...current, businessCriticality: e.target.value as CreateMonitorPayload['businessCriticality'] }))} className={inputClass}>
-                        <option value="LOW">Low</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="HIGH">High</option>
-                        <option value="CRITICAL">Critical</option>
-                      </select>
+                  <section className={`${surface} p-5`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Request setup</p>
+                    <div className="mt-5 space-y-4">
+                      <Field label="Headers" hint='One header per line. Example: Authorization: Bearer token'>
+                        <textarea rows={4} value={formData.headersText} onChange={(e) => setFormData((current) => ({ ...current, headersText: e.target.value }))} className={`${inputClass} font-mono`} placeholder={'Authorization: Bearer abc123\nx-api-key: demo-key'} />
+                      </Field>
+                      <Field label="Request body" hint="Paste JSON for POST, PUT, or login payloads.">
+                        <textarea rows={6} value={formData.rawBody} onChange={(e) => setFormData((current) => ({ ...current, rawBody: e.target.value }))} className={`${inputClass} font-mono`} placeholder={formData.type === 'DNS' ? '{"recordType":"A","expectedValue":"1.1.1.1"}' : '{"hello":"world"}'} />
+                      </Field>
                     </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-300">SLA tier</label>
-                      <select value={formData.slaTier || 'STANDARD'} onChange={(e) => setFormData((current) => ({ ...current, slaTier: e.target.value as CreateMonitorPayload['slaTier'] }))} className={inputClass}>
-                        <option value="STANDARD">Standard</option>
-                        <option value="PREMIUM">Premium</option>
-                        <option value="ENTERPRISE">Enterprise</option>
-                      </select>
+                  </section>
+
+                  <section className={`${surface} p-5`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Authentication</p>
+                    <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Field label="Auth mode">
+                        <select value={formData.authType} onChange={(e) => setFormData((current) => ({ ...current, authType: e.target.value as AuthType }))} className={inputClass}>
+                          <option value="NONE">None</option>
+                          <option value="BEARER">Bearer token</option>
+                          <option value="API_KEY">API key header</option>
+                          <option value="BASIC">Basic auth</option>
+                          <option value="MULTI_STEP">Multi-step login</option>
+                        </select>
+                      </Field>
+
+                      {formData.authType === 'API_KEY' ? (
+                        <Field label="Header name">
+                          <input value={formData.authHeaderName} onChange={(e) => setFormData((current) => ({ ...current, authHeaderName: e.target.value }))} className={inputClass} placeholder="x-api-key" />
+                        </Field>
+                      ) : null}
+
+                      {formData.authType === 'BEARER' || formData.authType === 'API_KEY' ? (
+                        <Field label={formData.authType === 'BEARER' ? 'Token' : 'API key'} className="md:col-span-2">
+                          <input type="password" value={formData.authSecretValue} onChange={(e) => setFormData((current) => ({ ...current, authSecretValue: e.target.value }))} className={inputClass} placeholder={formData.authType === 'BEARER' ? 'Paste bearer token' : 'Paste API key'} />
+                        </Field>
+                      ) : null}
+
+                      {formData.authType === 'BASIC' ? (
+                        <>
+                          <Field label="Username">
+                            <input value={formData.basicUsername} onChange={(e) => setFormData((current) => ({ ...current, basicUsername: e.target.value }))} className={inputClass} placeholder="api-user" />
+                          </Field>
+                          <Field label="Password">
+                            <input type="password" value={formData.basicPassword} onChange={(e) => setFormData((current) => ({ ...current, basicPassword: e.target.value }))} className={inputClass} placeholder="••••••••" />
+                          </Field>
+                        </>
+                      ) : null}
+
+                      {formData.authType === 'MULTI_STEP' ? (
+                        <Field label="Multi-step auth JSON" className="md:col-span-2" hint='Use the advanced JSON format for login → token → next request. Example: {"type":"MULTI_STEP","multiStep":{...}}'>
+                          <textarea rows={6} value={formData.rawAuthConfig} onChange={(e) => setFormData((current) => ({ ...current, rawAuthConfig: e.target.value }))} className={`${inputClass} font-mono`} placeholder='{"type":"MULTI_STEP","multiStep":{"login":{"url":"https://api.example.com/login","method":"POST","body":{"email":"demo","password":"demo"}},"tokenJsonPath":"$.token","targetHeader":"Authorization","tokenPrefix":"Bearer "}}' />
+                        </Field>
+                      ) : null}
                     </div>
-                  </div>
-                </section>
+                  </section>
+
+                  <section className={`${surface} p-5`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Validation</p>
+                    <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <Field label="Latency threshold (ms)">
+                        <input type="number" min={1} value={formData.latencyThresholdMs} onChange={(e) => setFormData((current) => ({ ...current, latencyThresholdMs: e.target.value }))} className={inputClass} placeholder="1500" />
+                      </Field>
+                      <Field label="Required keywords" hint="Comma-separated words that must appear in the response.">
+                        <input value={formData.requiredKeywords} onChange={(e) => setFormData((current) => ({ ...current, requiredKeywords: e.target.value }))} className={inputClass} placeholder="healthy, ok" />
+                      </Field>
+                      <Field label="Forbidden keywords" hint="Comma-separated words that must not appear.">
+                        <input value={formData.forbiddenKeywords} onChange={(e) => setFormData((current) => ({ ...current, forbiddenKeywords: e.target.value }))} className={inputClass} placeholder="error, exception" />
+                      </Field>
+                      <Field label="JSON field path" hint='Simple check like "$.status" or "$.data.ok".'>
+                        <input value={formData.jsonPath} onChange={(e) => setFormData((current) => ({ ...current, jsonPath: e.target.value }))} className={inputClass} placeholder="$.status" />
+                      </Field>
+                      <Field label="Expected field value" hint="Leave blank to only verify the field exists." className="md:col-span-2">
+                        <input value={formData.jsonPathExpectedValue} onChange={(e) => setFormData((current) => ({ ...current, jsonPathExpectedValue: e.target.value }))} className={inputClass} placeholder='"healthy"' />
+                      </Field>
+                    </div>
+                  </section>
+
+                  <section className={`${surface} p-5`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Alert routing</p>
+                    <div className="mt-5 space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        {(['EMAIL', 'SLACK', 'TELEGRAM', 'WHATSAPP'] as AlertChannel[]).map((channel) => (
+                          <ChannelToggle
+                            key={channel}
+                            label={channel}
+                            value={channel}
+                            checked={formData.alertChannels.includes(channel)}
+                            onChange={(value) =>
+                              setFormData((current) => ({
+                                ...current,
+                                alertChannels: current.alertChannels.includes(value)
+                                  ? current.alertChannels.filter((entry) => entry !== value)
+                                  : [...current.alertChannels, value],
+                              }))
+                            }
+                          />
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <Field label="Email recipients" hint="Comma-separated email addresses.">
+                          <input value={formData.emailRecipients} onChange={(e) => setFormData((current) => ({ ...current, emailRecipients: e.target.value }))} className={inputClass} placeholder="ops@example.com, founder@example.com" />
+                        </Field>
+                        <Field label="Telegram chat IDs" hint="Comma-separated chat IDs.">
+                          <input value={formData.telegramChatIds} onChange={(e) => setFormData((current) => ({ ...current, telegramChatIds: e.target.value }))} className={inputClass} placeholder="123456789" />
+                        </Field>
+                        <Field label="Slack webhooks" hint="Comma-separated webhook URLs.">
+                          <input value={formData.slackWebhookUrls} onChange={(e) => setFormData((current) => ({ ...current, slackWebhookUrls: e.target.value }))} className={inputClass} placeholder="https://hooks.slack.com/services/..." />
+                        </Field>
+                        <Field label="WhatsApp numbers" hint="Comma-separated E.164 numbers.">
+                          <input value={formData.whatsappNumbers} onChange={(e) => setFormData((current) => ({ ...current, whatsappNumbers: e.target.value }))} className={inputClass} placeholder="+15551234567" />
+                        </Field>
+                        <Field label="Retry interval after failure (seconds)">
+                          <input type="number" min={0} value={formData.retryIntervalSeconds} onChange={(e) => setFormData((current) => ({ ...current, retryIntervalSeconds: e.target.value }))} className={inputClass} />
+                        </Field>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className={`${surface} p-5`}>
+                    <button type="button" onClick={() => setAdvancedOpen((current) => !current)} className="flex w-full items-center justify-between text-left">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Advanced options</p>
+                        <p className="mt-2 text-sm text-slate-400">
+                          Keep this closed for fast setup. Open it for multi-step auth, custom JSON rules, or future region config.
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-slate-300">
+                        {advancedOpen ? 'Hide' : 'Show'}
+                      </span>
+                    </button>
+
+                    {advancedOpen ? (
+                      <div className="mt-5 grid grid-cols-1 gap-4">
+                        <Field label="Advanced auth JSON">
+                          <textarea rows={5} value={formData.rawAuthConfig} onChange={(e) => setFormData((current) => ({ ...current, rawAuthConfig: e.target.value }))} className={`${inputClass} font-mono`} placeholder='{"type":"MULTI_STEP","multiStep":{"login":{"url":"https://api.example.com/login","method":"POST","body":{"email":"demo","password":"demo"}},"tokenJsonPath":"$.token","targetHeader":"Authorization","tokenPrefix":"Bearer "}}' />
+                        </Field>
+                        <Field label="Advanced validation JSON">
+                          <textarea rows={5} value={formData.rawValidationConfig} onChange={(e) => setFormData((current) => ({ ...current, rawValidationConfig: e.target.value }))} className={`${inputClass} font-mono`} placeholder='{"jsonPaths":[{"path":"$.status","operator":"EQUALS","expectedValue":"healthy"}]}' />
+                        </Field>
+                        <Field label="Advanced alert JSON">
+                          <textarea rows={5} value={formData.rawAlertConfig} onChange={(e) => setFormData((current) => ({ ...current, rawAlertConfig: e.target.value }))} className={`${inputClass} font-mono`} placeholder='{"failureThreshold":3,"channels":["EMAIL","SLACK","TELEGRAM","WHATSAPP"]}' />
+                        </Field>
+                        <Field label="Probe regions" hint="Architecture-ready only for now. Default is enough.">
+                          <input value={formData.probeRegionsText} onChange={(e) => setFormData((current) => ({ ...current, probeRegionsText: e.target.value }))} className={inputClass} placeholder="default" />
+                        </Field>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <Field label="Service name">
+                            <input value={formData.serviceName || ''} onChange={(e) => setFormData((current) => ({ ...current, serviceName: e.target.value }))} className={inputClass} placeholder="Payments API" />
+                          </Field>
+                          <Field label="Feature name">
+                            <input value={formData.featureName || ''} onChange={(e) => setFormData((current) => ({ ...current, featureName: e.target.value }))} className={inputClass} placeholder="Customer payments" />
+                          </Field>
+                          <Field label="Customer journey">
+                            <input value={formData.customerJourney || ''} onChange={(e) => setFormData((current) => ({ ...current, customerJourney: e.target.value }))} className={inputClass} placeholder="Sign-up to checkout" />
+                          </Field>
+                          <Field label="Team owner">
+                            <input value={formData.teamOwner || ''} onChange={(e) => setFormData((current) => ({ ...current, teamOwner: e.target.value }))} className={inputClass} placeholder="Growth Engineering" />
+                          </Field>
+                          <Field label="Region label">
+                            <input value={formData.region || ''} onChange={(e) => setFormData((current) => ({ ...current, region: e.target.value }))} className={inputClass} placeholder="India / APAC" />
+                          </Field>
+                          <Field label="Business criticality">
+                            <select value={formData.businessCriticality || 'MEDIUM'} onChange={(e) => setFormData((current) => ({ ...current, businessCriticality: e.target.value as CreateMonitorPayload['businessCriticality'] }))} className={inputClass}>
+                              <option value="LOW">Low</option>
+                              <option value="MEDIUM">Medium</option>
+                              <option value="HIGH">High</option>
+                              <option value="CRITICAL">Critical</option>
+                            </select>
+                          </Field>
+                          <Field label="SLA tier">
+                            <select value={formData.slaTier || 'STANDARD'} onChange={(e) => setFormData((current) => ({ ...current, slaTier: e.target.value as CreateMonitorPayload['slaTier'] }))} className={inputClass}>
+                              <option value="STANDARD">Standard</option>
+                              <option value="PREMIUM">Premium</option>
+                              <option value="ENTERPRISE">Enterprise</option>
+                            </select>
+                          </Field>
+                        </div>
+                      </div>
+                    ) : null}
+                  </section>
+                </div>
+
+                <div className="space-y-6">
+                  <section className={`${surface} p-5`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Before saving</p>
+                    <h3 className="mt-3 text-xl font-bold text-white">Test this monitor</h3>
+                    <p className="mt-2 text-sm text-slate-400">
+                      Run one live check from the current probe before committing the configuration.
+                    </p>
+                    <div className="mt-5 space-y-4">
+                      <button type="button" onClick={() => void runTest()} disabled={testMutation.isPending || !projectId} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/12 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/18 disabled:opacity-60">
+                        {testMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {testMutation.isPending ? 'Running test...' : 'Test monitor now'}
+                      </button>
+                      {testMutation.isSuccess ? (
+                        <div className={`rounded-[24px] border p-4 text-sm ${testMutation.data.success ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-100' : 'border-rose-400/20 bg-rose-500/10 text-rose-100'}`}>
+                          <p className="font-semibold">
+                            {testMutation.data.success ? 'Check passed' : 'Check failed'}
+                          </p>
+                          <p className="mt-2">{formatTestResult(testMutation.data)}</p>
+                          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                            <span className="rounded-full border border-white/10 px-3 py-1">
+                              Status: {testMutation.data.statusCode ?? 'n/a'}
+                            </span>
+                            <span className="rounded-full border border-white/10 px-3 py-1">
+                              Latency: {testMutation.data.responseTimeMs}ms
+                            </span>
+                          </div>
+                          {typeof testMutation.data.metadata?.responseSnippet === 'string' ? (
+                            <pre className="mt-3 overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/40 p-3 text-xs text-slate-200">
+                              {testMutation.data.metadata.responseSnippet}
+                            </pre>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {testMutation.isError ? (
+                        <div className="rounded-[24px] border border-rose-400/20 bg-rose-500/10 p-4 text-sm text-rose-100">
+                          {testMutation.error instanceof Error ? testMutation.error.message : 'Could not test this monitor.'}
+                        </div>
+                      ) : null}
+                    </div>
+                  </section>
+
+                  <section className={`${surface} p-5`}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Quick checklist</p>
+                    <div className="mt-4 space-y-3 text-sm text-slate-300">
+                      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+                        Add the endpoint URL and method.
+                      </div>
+                      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+                        Add headers only if the API needs them.
+                      </div>
+                      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+                        Test once before saving to avoid false alerts.
+                      </div>
+                      <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
+                        Use Advanced only for multi-step auth or custom validation.
+                      </div>
+                    </div>
+                  </section>
+                </div>
               </div>
             </div>
+
             <div className="flex justify-end gap-3 border-t border-white/8 bg-slate-950/35 px-6 py-4">
               <button type="button" onClick={onClose} className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.04] hover:text-white">
                 Cancel
@@ -564,12 +1171,7 @@ export default function MonitorsList() {
                           <StatusBadge status={monitor.status} />
                         </div>
                         <p className="mt-2 truncate text-sm text-slate-500">{monitor.url}</p>
-                        <NextCheckCountdown
-                          className="mt-3"
-                          intervalSeconds={monitor.intervalSeconds}
-                          lastCheckedAt={monitor.lastCheckedAt}
-                          status={monitor.status}
-                        />
+                        <NextCheckCountdown className="mt-3" intervalSeconds={monitor.intervalSeconds} lastCheckedAt={monitor.lastCheckedAt} status={monitor.status} />
                         <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-4">
                           <div className="rounded-[22px] border border-white/8 bg-slate-950/30 px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Latency</p><p className="mt-2 text-lg font-bold text-white">{formatResponseTime(monitor.avgResponseTimeMs)}</p></div>
                           <div className="rounded-[22px] border border-white/8 bg-slate-950/30 px-4 py-3"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Uptime</p><p className="mt-2 text-lg font-bold text-white">{formatAvailability(monitor.uptimePercentage)}</p></div>
@@ -600,7 +1202,6 @@ export default function MonitorsList() {
             </div>
           )}
         </div>
-
         <div className="space-y-4">
           <div className={`${surface} p-5`}>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Hot monitors</p>

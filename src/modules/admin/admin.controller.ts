@@ -83,6 +83,11 @@ export class AdminController {
     return this.adminService.listActiveUsersAndRecentSignups();
   }
 
+  @Get('monitoring-ops')
+  async getMonitoringOpsOverview() {
+    return this.adminService.getMonitoringOpsOverview();
+  }
+
   @Post('users/:id/archive')
   async softDeleteUser(
     @Param('id') userId: string,

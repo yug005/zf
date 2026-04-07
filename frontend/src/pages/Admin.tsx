@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Loader2,
   Mail,
+  MessageSquareWarning,
   Search,
   ShieldCheck,
   Trash2,
@@ -130,6 +131,35 @@ type UsersOverview = {
   }>;
 };
 
+type MonitoringOpsOverview = {
+  secretCount: number;
+  secretKinds: Array<{
+    kind: string;
+    _count: {
+      _all: number;
+    };
+  }>;
+  deliveryFailures: number;
+  deliveryPending: number;
+  recentDeliveries: Array<{
+    id: string;
+    channel: string;
+    status: 'PENDING' | 'SENT' | 'FAILED';
+    recipient: string;
+    deliveryAttempts: number;
+    errorMessage: string | null;
+    createdAt: string;
+    deliveredAt: string | null;
+    alert: {
+      id: string;
+      monitor: {
+        id: string;
+        name: string;
+      };
+    };
+  }>;
+};
+
 const money = (value: number) =>
   new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -194,6 +224,16 @@ export default function Admin() {
       const { data } = await axiosPrivate.get<UsersOverview>('/admin/users/overview');
       return data;
     },
+  });
+
+  const monitoringOpsQuery = useQuery({
+    queryKey: ['adminMonitoringOps'],
+    enabled: Boolean(currentUser?.isAdmin),
+    queryFn: async () => {
+      const { data } = await axiosPrivate.get<MonitoringOpsOverview>('/admin/monitoring-ops');
+      return data;
+    },
+    refetchInterval: 60_000,
   });
 
   const createGrantMutation = useMutation({
@@ -281,6 +321,7 @@ export default function Admin() {
   const grantTables = grantsQuery.data || [];
   const activeUsers = overviewQuery.data?.activeUsers || [];
   const recentSignups = overviewQuery.data?.recentSignups || [];
+  const monitoringOps = monitoringOpsQuery.data;
 
   return (
     <div className="space-y-6 pb-12">
@@ -491,6 +532,55 @@ export default function Admin() {
               meta: dateTime(entry.createdAt),
             }))}
           />
+
+          <section className="rounded-[28px] border border-white/10 bg-slate-950/55 p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-white">
+              <MessageSquareWarning className="h-4 w-4 text-cyan-300" />
+              Monitoring ops
+            </div>
+            {monitoringOpsQuery.isLoading ? (
+              <div className="mt-4 flex items-center gap-3 text-sm text-slate-400">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading monitoring operations snapshot
+              </div>
+            ) : monitoringOps ? (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <StatCard label="Stored secrets" value={String(monitoringOps.secretCount)} />
+                  <StatCard label="Delivery failures" value={String(monitoringOps.deliveryFailures)} />
+                  <StatCard label="Pending deliveries" value={String(monitoringOps.deliveryPending)} />
+                </div>
+
+                <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                  <MiniTable
+                    title="Secret mix"
+                    rows={monitoringOps.secretKinds.map((row) => ({
+                      key: row.kind,
+                      primary: row.kind,
+                      secondary: `${row._count._all} secret${row._count._all === 1 ? '' : 's'}`,
+                      meta: 'Encrypted workspace-linked credentials',
+                    }))}
+                  />
+                  <MiniTable
+                    title="Recent alert deliveries"
+                    rows={monitoringOps.recentDeliveries.map((delivery) => ({
+                      key: delivery.id,
+                      primary: `${delivery.channel} → ${delivery.status}`,
+                      secondary: `${delivery.alert.monitor.name} • ${delivery.recipient}`,
+                      meta:
+                        delivery.status === 'FAILED' && delivery.errorMessage
+                          ? `${dateTime(delivery.createdAt)} • ${delivery.errorMessage}`
+                          : delivery.deliveredAt
+                            ? `${dateTime(delivery.createdAt)} • delivered ${dateTime(delivery.deliveredAt)}`
+                            : `${dateTime(delivery.createdAt)} • attempts ${delivery.deliveryAttempts}`,
+                    }))}
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">Monitoring ops snapshot unavailable.</p>
+            )}
+          </section>
 
           <MiniTable
             title="Active users"

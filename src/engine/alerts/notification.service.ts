@@ -29,6 +29,11 @@ export class NotificationService {
   private readonly emailFrom: string | null;
   private readonly slackWebhookUrl: string | null;
   private readonly fallbackAlertRecipient: string | null;
+  private readonly telegramBotToken: string | null;
+  private readonly telegramFallbackChatId: string | null;
+  private readonly twilioAccountSid: string | null;
+  private readonly twilioAuthToken: string | null;
+  private readonly twilioWhatsappFrom: string | null;
 
   constructor(private readonly configService: ConfigService) {
     const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -38,6 +43,12 @@ export class NotificationService {
       'noreply@zer0friction.in';
     this.slackWebhookUrl = this.configService.get<string>('SLACK_WEBHOOK_URL', '');
     this.fallbackAlertRecipient = this.configService.get<string>('ADMIN_EMAIL', '').trim() || null;
+    this.telegramBotToken = this.configService.get<string>('TELEGRAM_BOT_TOKEN', '').trim() || null;
+    this.telegramFallbackChatId =
+      this.configService.get<string>('TELEGRAM_CHAT_ID', '').trim() || null;
+    this.twilioAccountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID', '').trim() || null;
+    this.twilioAuthToken = this.configService.get<string>('TWILIO_AUTH_TOKEN', '').trim() || null;
+    this.twilioWhatsappFrom = this.configService.get<string>('TWILIO_WHATSAPP_FROM', '').trim() || null;
 
     if (resendApiKey) {
       this.resend = new Resend(resendApiKey);
@@ -51,27 +62,25 @@ export class NotificationService {
   }
 
   async sendNotifications(data: AlertDeliveryJobData): Promise<void> {
-    const promises: Promise<void | unknown>[] = [];
-
-    if (this.resend && this.emailFrom) {
-      promises.push(this.sendAlertEmail(data));
+    const channel = data.channel || 'EMAIL';
+    if (channel === 'EMAIL') {
+      await this.sendAlertEmail(data);
+      return;
     }
-
-    if (this.slackWebhookUrl) {
-      promises.push(this.sendSlack(data));
+    if (channel === 'SLACK') {
+      await this.sendSlack(data);
+      return;
     }
-
-    if (promises.length === 0) {
-      this.logger.debug(`No notification channels configured for alert ${data.alertId}`);
+    if (channel === 'TELEGRAM') {
+      await this.sendTelegram(data);
+      return;
+    }
+    if (channel === 'WHATSAPP' || channel === 'SMS') {
+      await this.sendWhatsapp(data);
       return;
     }
 
-    const results = await Promise.allSettled(promises);
-    const failures = results.filter((result) => result.status === 'rejected');
-    if (failures.length > 0) {
-      this.logger.error(`Failed to send some notifications: ${JSON.stringify(failures)}`);
-      throw new Error(`Notification delivery failed for ${failures.length} channels.`);
-    }
+    this.logger.debug(`Unsupported notification channel ${channel} for alert ${data.alertId}`);
   }
 
   async sendTrialReminderEmail(
@@ -400,7 +409,10 @@ export class NotificationService {
     const isTriggered = data.type === 'TRIGGERED';
     const subject = `${isTriggered ? 'Monitor down' : 'Monitor recovered'}: ${data.monitorName}`;
     const accent = isTriggered ? '#dc2626' : '#059669';
-    const recipientEmail = data.metadata?.recipientEmail || this.fallbackAlertRecipient;
+    const recipientEmail =
+      data.metadata?.recipients?.EMAIL?.[0] ||
+      data.metadata?.recipientEmail ||
+      this.fallbackAlertRecipient;
     const summary = isTriggered
       ? `${data.monitorName} is reporting failures. Review the latest incident details and investigate the target endpoint.`
       : `${data.monitorName} has recovered and is responding again.`;
@@ -445,6 +457,7 @@ export class NotificationService {
   }
 
   private async sendSlack(data: AlertDeliveryJobData): Promise<void> {
+    const recipientWebhook = data.metadata?.recipients?.SLACK?.[0] || this.slackWebhookUrl;
     const color = data.type === 'TRIGGERED' ? '#ef4444' : '#22c55e';
     const title = data.type === 'TRIGGERED' ? 'Monitor DOWN' : 'Monitor RECOVERED';
 
@@ -473,8 +486,74 @@ export class NotificationService {
       ],
     };
 
-    await axios.post(this.slackWebhookUrl!, payload, { timeout: 10_000 });
+    if (!recipientWebhook) {
+      throw new Error('Slack notification requested but no webhook URL is configured.');
+    }
+
+    await axios.post(recipientWebhook, payload, { timeout: 10_000 });
     this.logger.log(`Slack notification sent for alert ${data.alertId}`);
+  }
+
+  private async sendWhatsapp(data: AlertDeliveryJobData): Promise<void> {
+    const recipient =
+      data.metadata?.recipients?.WHATSAPP?.[0] || data.metadata?.recipients?.SMS?.[0];
+    if (!recipient) {
+      throw new Error('WhatsApp notification requested but no destination number is configured.');
+    }
+    if (!this.twilioAccountSid || !this.twilioAuthToken || !this.twilioWhatsappFrom) {
+      throw new Error('Twilio WhatsApp configuration is incomplete.');
+    }
+
+    const message = `${data.type === 'TRIGGERED' ? 'ALERT' : 'RECOVERY'}: ${data.monitorName}\n${data.message}\n${data.monitorUrl}\n${data.timestamp}`;
+    const auth = Buffer.from(`${this.twilioAccountSid}:${this.twilioAuthToken}`).toString('base64');
+    const body = new URLSearchParams({
+      To: `whatsapp:${recipient}`,
+      From: `whatsapp:${this.twilioWhatsappFrom}`,
+      Body: message,
+    });
+
+    await axios.post(
+      `https://api.twilio.com/2010-04-01/Accounts/${this.twilioAccountSid}/Messages.json`,
+      body.toString(),
+      {
+        timeout: 10_000,
+        headers: {
+          Authorization: `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      },
+    );
+    this.logger.log(`WhatsApp notification sent for alert ${data.alertId}`);
+  }
+
+  private async sendTelegram(data: AlertDeliveryJobData): Promise<void> {
+    const chatId =
+      data.metadata?.recipients?.TELEGRAM?.[0] || this.telegramFallbackChatId;
+    if (!chatId) {
+      throw new Error('Telegram notification requested but no destination chat ID is configured.');
+    }
+    if (!this.telegramBotToken) {
+      throw new Error('Telegram notification requested but TELEGRAM_BOT_TOKEN is not configured.');
+    }
+
+    const title = data.type === 'TRIGGERED' ? 'ALERT' : 'RECOVERY';
+    const message = [
+      `${title}: ${data.monitorName}`,
+      data.message,
+      data.monitorUrl,
+      data.timestamp,
+    ].join('\n');
+
+    await axios.post(
+      `https://api.telegram.org/bot${this.telegramBotToken}/sendMessage`,
+      {
+        chat_id: chatId,
+        text: message,
+        disable_web_page_preview: true,
+      },
+      { timeout: 10_000 },
+    );
+    this.logger.log(`Telegram notification sent for alert ${data.alertId}`);
   }
 
   private async sendEmail(to: string, subject: string, html: string): Promise<void> {

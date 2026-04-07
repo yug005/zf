@@ -3,6 +3,7 @@ import dns from 'node:dns';
 import net from 'node:net';
 import type { MonitorCheckJobData, CheckExecutionResult } from '../constants.js';
 import { buildHttpStatusErrorMessage } from '../check-diagnosis.js';
+import { extractJsonPathValue, maskSensitiveText, recursivelyInterpolate } from '../../modules/monitor/monitor-config.js';
 
 const dnsLookup = dns.promises.lookup;
 
@@ -130,14 +131,15 @@ export async function executeHttpCheck(
   const start = performance.now();
 
   try {
-    const parsedUrl = new URL(data.url);
+    const resolvedRequest = await resolveRequestConfig(data);
+    const parsedUrl = new URL(resolvedRequest.url);
     await assertSafeTarget(parsedUrl);
 
     const response = await axios({
-      url: data.url,
-      method: data.method.toLowerCase(),
-      headers: data.headers,
-      data: data.body,
+      url: resolvedRequest.url,
+      method: resolvedRequest.method.toLowerCase(),
+      headers: resolvedRequest.headers,
+      data: resolvedRequest.body,
       timeout: data.timeoutMs,
       validateStatus: () => true,
       maxRedirects: 5,
@@ -148,33 +150,37 @@ export async function executeHttpCheck(
 
     const responseTimeMs = Math.round(performance.now() - start);
     const statusCode = response.status;
-    const expectedStatus = data.expectedStatus;
+    const expectedStatus = data.validationConfig?.expectedStatus ?? data.expectedStatus;
     let success = expectedStatus
       ? statusCode === expectedStatus
       : statusCode >= 200 && statusCode < 300;
 
     let errorMessage = success ? undefined : buildHttpStatusErrorMessage(statusCode, expectedStatus);
+    const responseText = response.data ? String(response.data) : '';
+    const parsedJson = tryParseJson(responseText);
     const matchedKeywords: string[] = [];
     const missingKeywords: string[] = [];
+    const jsonPathFailures: string[] = [];
 
     // KEYWORD VALIDATION
-    if (success && data.keywordConfig) {
+    const keywordConfig = data.validationConfig?.keyword ?? data.keywordConfig;
+    if (success && keywordConfig) {
       if (!response.data) {
         success = false;
         errorMessage = 'EMPTY_RESPONSE: Cannot validate keywords on an empty response body';
       } else {
-        let responseText = String(response.data);
-        if (data.keywordConfig.stripHtml) {
-          responseText = responseText.replace(/<[^>]*>?/gm, ' ');
+        let normalizedText = String(response.data);
+        if (keywordConfig.stripHtml) {
+          normalizedText = normalizedText.replace(/<[^>]*>?/gm, ' ');
         }
         
-        const searchTarget = responseText.toLowerCase();
+        const searchTarget = normalizedText.toLowerCase();
 
         // 1. Check REQUIRED keywords
-        if (data.keywordConfig.required?.length) {
-          for (const kw of data.keywordConfig.required) {
+        if (keywordConfig.required?.length) {
+          for (const kw of keywordConfig.required) {
             const lowerKw = kw.toLowerCase();
-            const isMatch = data.keywordConfig.matchExact 
+            const isMatch = keywordConfig.matchExact 
               ? new RegExp(`\\b${lowerKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(searchTarget)
               : searchTarget.includes(lowerKw);
               
@@ -189,11 +195,11 @@ export async function executeHttpCheck(
         }
 
         // 2. Check FORBIDDEN keywords (only if not already failed)
-        if (success && data.keywordConfig.forbidden?.length) {
+        if (success && keywordConfig.forbidden?.length) {
           const foundForbidden: string[] = [];
-          for (const kw of data.keywordConfig.forbidden) {
+          for (const kw of keywordConfig.forbidden) {
             const lowerKw = kw.toLowerCase();
-            const isMatch = data.keywordConfig.matchExact 
+            const isMatch = keywordConfig.matchExact 
               ? new RegExp(`\\b${lowerKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(searchTarget)
               : searchTarget.includes(lowerKw);
               
@@ -211,15 +217,56 @@ export async function executeHttpCheck(
       }
     }
 
+    if (success && data.validationConfig?.jsonPaths?.length) {
+      for (const rule of data.validationConfig.jsonPaths) {
+        const value = extractJsonPathValue(parsedJson, rule.path);
+        if (rule.operator === 'EXISTS' && value === undefined) {
+          jsonPathFailures.push(`${rule.path} does not exist`);
+        }
+        if (rule.operator === 'EQUALS' && JSON.stringify(value) !== JSON.stringify(rule.expectedValue)) {
+          jsonPathFailures.push(`${rule.path} did not equal expected value`);
+        }
+        if (
+          rule.operator === 'CONTAINS' &&
+          !String(value ?? '').toLowerCase().includes(String(rule.expectedValue ?? '').toLowerCase())
+        ) {
+          jsonPathFailures.push(`${rule.path} did not contain expected value`);
+        }
+      }
+
+      if (jsonPathFailures.length > 0) {
+        success = false;
+        errorMessage = `JSON_PATH_ASSERTION_FAILED: ${jsonPathFailures.join('; ')}`;
+      }
+    }
+
+    if (
+      success &&
+      data.validationConfig?.latencyThresholdMs &&
+      responseTimeMs > data.validationConfig.latencyThresholdMs
+    ) {
+      success = false;
+      errorMessage = `LATENCY_THRESHOLD_EXCEEDED: ${responseTimeMs}ms exceeded ${data.validationConfig.latencyThresholdMs}ms`;
+    }
+
     return {
       success,
       statusCode,
       responseTimeMs,
       errorMessage,
-      metadata: (matchedKeywords.length || missingKeywords.length) ? {
-        matchedKeywords,
-        missingKeywords
-      } : undefined
+      metadata:
+        matchedKeywords.length ||
+        missingKeywords.length ||
+        jsonPathFailures.length ||
+        responseText
+          ? {
+              matchedKeywords,
+              missingKeywords,
+              jsonPathFailures,
+              region: data.region ?? 'default',
+              responseSnippet: responseText ? maskSensitiveText(responseText) : undefined,
+            }
+          : undefined,
     };
   } catch (error) {
     const responseTimeMs = Math.round(performance.now() - start);
@@ -238,6 +285,7 @@ export async function executeHttpCheck(
           success: false,
           responseTimeMs,
           errorMessage: `Connection refused: ${data.url}`,
+          metadata: { region: data.region ?? 'default' },
         };
       }
 
@@ -246,6 +294,7 @@ export async function executeHttpCheck(
           success: false,
           responseTimeMs,
           errorMessage: `DNS resolution failed: ${data.url}`,
+          metadata: { region: data.region ?? 'default' },
         };
       }
 
@@ -254,6 +303,10 @@ export async function executeHttpCheck(
         statusCode: error.response?.status,
         responseTimeMs,
         errorMessage: error.message,
+        metadata: {
+          region: data.region ?? 'default',
+          responseSnippet: error.response?.data ? maskSensitiveText(String(error.response.data)) : undefined,
+        },
       };
     }
 
@@ -261,6 +314,65 @@ export async function executeHttpCheck(
       success: false,
       responseTimeMs,
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      metadata: { region: data.region ?? 'default' },
     };
+  }
+}
+
+async function resolveRequestConfig(data: MonitorCheckJobData) {
+  const headers = { ...(data.headers ?? {}) };
+  let url = data.url;
+  let body = data.body;
+  let method = data.method;
+
+  if (data.authConfig?.type === 'BEARER' && data.authConfig.secretValue) {
+    headers.Authorization = `Bearer ${data.authConfig.secretValue}`;
+  }
+
+  if (data.authConfig?.type === 'API_KEY' && data.authConfig.secretValue) {
+    headers[data.authConfig.headerName || 'x-api-key'] = data.authConfig.secretValue;
+  }
+
+  if (data.authConfig?.type === 'BASIC' && data.authConfig.username && data.authConfig.password) {
+    const basic = Buffer.from(`${data.authConfig.username}:${data.authConfig.password}`).toString('base64');
+    headers.Authorization = `Basic ${basic}`;
+  }
+
+  if (data.authConfig?.type === 'MULTI_STEP' && data.authConfig.multiStep) {
+    const loginResponse = await axios({
+      url: data.authConfig.multiStep.login.url,
+      method: (data.authConfig.multiStep.login.method || 'POST').toLowerCase(),
+      headers: data.authConfig.multiStep.login.headers,
+      data: data.authConfig.multiStep.login.body,
+      timeout: data.timeoutMs,
+      validateStatus: () => true,
+      responseType: 'json',
+    });
+    const token = extractJsonPathValue(loginResponse.data, data.authConfig.multiStep.tokenJsonPath);
+    const tokenValue = String(token ?? '');
+    const variables = {
+      'auth.token': tokenValue,
+      token: tokenValue,
+    };
+    headers[data.authConfig.multiStep.targetHeader || 'Authorization'] =
+      `${data.authConfig.multiStep.tokenPrefix ?? 'Bearer '}${tokenValue}`;
+    url = String(recursivelyInterpolate(url, variables));
+    body = recursivelyInterpolate(body, variables);
+    Object.assign(headers, recursivelyInterpolate(headers, variables) as Record<string, string>);
+    method = String(recursivelyInterpolate(method, variables));
+  }
+
+  return { url, headers, body, method };
+}
+
+function tryParseJson(input: string): unknown {
+  if (!input) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(input);
+  } catch {
+    return null;
   }
 }

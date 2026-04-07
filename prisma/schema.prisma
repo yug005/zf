@@ -38,6 +38,7 @@ model User {
   subscriptionReminders SubscriptionReminder[]
   inAppNotifications InAppNotification[]
   statusPages        StatusPage[]
+  monitorSecrets     MonitorSecret[]
   adminGrants        AdminGrant[]
   adminAuditLogs     AdminAuditLog[]    @relation("AdminAuditActor")
   adminGrantedAccess AdminGrant[]       @relation("AdminGrantActor")
@@ -168,6 +169,10 @@ model Monitor {
   pausedByBilling     Boolean       @default(false) @map("paused_by_billing")
   headers             Json?
   body                Json?
+  authConfig          Json?         @map("auth_config")
+  validationConfig    Json?         @map("validation_config")
+  alertConfig         Json?         @map("alert_config")
+  probeRegions        Json?         @map("probe_regions")
   retries             Int           @default(0)
   consecutiveFailures Int           @default(0) @map("consecutive_failures")
   failureThreshold    Int           @default(3) @map("failure_threshold")
@@ -177,6 +182,7 @@ model Monitor {
   lastCheckedAt       DateTime?     @map("last_checked_at")
   alerts              Alert[]
   checkResults        CheckResult[]
+  authSecrets         MonitorSecretLink[]
   project             Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   statusPages         StatusPageMonitor[]
   incidents           Incident[]
@@ -196,6 +202,7 @@ model CheckResult {
   errorMessage   String?     @map("error_message")
   headers        Json?
   body           String?
+  metadata       Json?
   monitorId      String      @map("monitor_id")
   checkedAt      DateTime    @default(now()) @map("checked_at")
   monitor        Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
@@ -221,6 +228,7 @@ model Alert {
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
   monitor        Monitor      @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  deliveries     AlertDelivery[]
 
   @@index([monitorId])
   @@index([status])
@@ -277,12 +285,62 @@ model StatusPage {
   user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   name      String
   slug      String              @unique
+  mode      StatusPageMode      @default(SIMPLE)
   monitors  StatusPageMonitor[]
   createdAt DateTime            @default(now()) @map("created_at")
   updatedAt DateTime            @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("status_pages")
+}
+
+model MonitorSecret {
+  id             String              @id @default(uuid())
+  userId         String              @map("user_id")
+  name           String
+  kind           MonitorSecretKind
+  encryptedValue String              @map("encrypted_value")
+  iv             String
+  authTag        String              @map("auth_tag")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monitors       MonitorSecretLink[]
+
+  @@index([userId])
+  @@map("monitor_secrets")
+}
+
+model MonitorSecretLink {
+  monitorId String @map("monitor_id")
+  secretId  String @map("secret_id")
+  role      String
+  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  secret    MonitorSecret @relation(fields: [secretId], references: [id], onDelete: Cascade)
+
+  @@id([monitorId, secretId, role])
+  @@index([secretId])
+  @@map("monitor_secret_links")
+}
+
+model AlertDelivery {
+  id             String               @id @default(uuid())
+  alertId        String               @map("alert_id")
+  channel        AlertChannel
+  recipient      String?
+  status         AlertDeliveryStatus  @default(PENDING)
+  deliveryAttempts Int                @default(0) @map("delivery_attempts")
+  lastAttemptAt  DateTime?            @map("last_attempt_at")
+  deliveredAt    DateTime?            @map("delivered_at")
+  errorMessage   String?              @map("error_message")
+  metadata       Json?
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  alert          Alert                @relation(fields: [alertId], references: [id], onDelete: Cascade)
+
+  @@index([alertId])
+  @@index([status])
+  @@map("alert_deliveries")
 }
 
 model StatusPageMonitor {
@@ -345,6 +403,11 @@ enum IncidentStatus {
   RESOLVED
 }
 
+enum StatusPageMode {
+  SIMPLE
+  ADVANCED
+}
+
 enum MonitorType {
   HTTP
   TCP
@@ -373,14 +436,23 @@ enum HttpMethod {
 enum AlertChannel {
   EMAIL
   SLACK
+  TELEGRAM
   WEBHOOK
   SMS
+  WHATSAPP
 }
 
 enum AlertStatus {
   TRIGGERED
   ACKNOWLEDGED
   RESOLVED
+}
+
+enum AlertDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SUPPRESSED
 }
 
 enum CheckStatus {
@@ -456,4 +528,12 @@ enum ChangeEventSource {
   VERCEL
   RAILWAY
   SYSTEM
+}
+
+enum MonitorSecretKind {
+  TOKEN
+  API_KEY
+  BASIC_USERNAME
+  BASIC_PASSWORD
+  GENERIC
 }

@@ -276,6 +276,52 @@ export class AdminService {
     return { activeUsers, recentSignups };
   }
 
+  async getMonitoringOpsOverview() {
+    const [secretCount, secretKinds, deliveryFailures, deliveryPending, recentDeliveries] =
+      await Promise.all([
+        this.prisma.monitorSecret.count(),
+        this.prisma.monitorSecret.groupBy({
+          by: ['kind'],
+          _count: { _all: true },
+        }),
+        this.prisma.alertDelivery.count({ where: { status: 'FAILED' } }),
+        this.prisma.alertDelivery.count({ where: { status: 'PENDING' } }),
+        this.prisma.alertDelivery.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            channel: true,
+            status: true,
+            recipient: true,
+            deliveryAttempts: true,
+            errorMessage: true,
+            createdAt: true,
+            deliveredAt: true,
+            alert: {
+              select: {
+                id: true,
+                monitor: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+      ]);
+
+    return {
+      secretCount,
+      secretKinds,
+      deliveryFailures,
+      deliveryPending,
+      recentDeliveries,
+    };
+  }
+
   async softDeleteUser(actor: AdminActor, userId: string, reason?: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
