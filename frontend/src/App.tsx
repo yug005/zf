@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { ThemeProvider } from './components/ThemeProvider';
 import { PageMeta } from './components/PageMeta';
 import SystemBootLoader from './components/SystemBootLoader';
-import { fetchCurrentUser } from './services/current-user';
+import { AUTH_HINT_STORAGE_KEY, currentUserQueryOptions } from './services/current-user';
 
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
 const AuthLayout = lazy(() => import('./layouts/AuthLayout'));
@@ -41,7 +41,7 @@ const Admin = lazy(() => import('./pages/Admin'));
 const ApiKeys = lazy(() => import('./pages/ApiKeys'));
 const ExpiredState = lazy(() => import('./pages/ExpiredState'));
 
-const INITIAL_BOOT_STORAGE_KEY = 'zf-initial-boot-complete';
+const INITIAL_BOOT_STORAGE_KEY = 'zf-initial-boot-complete-v2';
 const FIRST_BOOT_DURATION_MS = 2400;
 
 const queryClient = new QueryClient({
@@ -51,21 +51,41 @@ const queryClient = new QueryClient({
 });
 
 function RouteFallback() {
-  return <SystemBootLoader minDuration={900} />;
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#040611] px-6 text-slate-300">
+      <div className="text-center">
+        <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+        <p className="mt-4 text-sm">Loading workspace...</p>
+      </div>
+    </div>
+  );
 }
 
 function RootRoute() {
-  const { data: currentUser, isLoading, isFetching } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: fetchCurrentUser,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    retry: false,
-  });
+  const { data: currentUser, isLoading, isFetching } = useQuery(
+    currentUserQueryOptions(),
+  );
+  const hasSessionHint =
+    typeof window !== 'undefined' &&
+    window.localStorage.getItem(AUTH_HINT_STORAGE_KEY) === '1';
+
+  if (currentUser && typeof window !== 'undefined') {
+    window.localStorage.setItem(AUTH_HINT_STORAGE_KEY, '1');
+  }
+
+  if ((isLoading || isFetching) && hasSessionHint) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   if (isLoading || isFetching) {
-    return <RouteFallback />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#040611] px-6 text-slate-300">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+          <p className="mt-4 text-sm">Checking session...</p>
+        </div>
+      </div>
+    );
   }
 
   if (currentUser) {
@@ -165,12 +185,12 @@ export default function App() {
       return true;
     }
 
-    return window.sessionStorage.getItem(INITIAL_BOOT_STORAGE_KEY) === '1';
+    return window.localStorage.getItem(INITIAL_BOOT_STORAGE_KEY) === '1';
   });
 
   const handleInitialBootComplete = useCallback(() => {
     if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem(INITIAL_BOOT_STORAGE_KEY, '1');
+      window.localStorage.setItem(INITIAL_BOOT_STORAGE_KEY, '1');
     }
 
     setHasCompletedInitialBoot(true);

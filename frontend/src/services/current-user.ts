@@ -39,6 +39,29 @@ export interface CurrentUser {
   isAdmin: boolean;
 }
 
+export const CURRENT_USER_QUERY_KEY = ['currentUser'] as const;
+export const AUTH_HINT_STORAGE_KEY = 'zf-has-auth-session';
+
+type CurrentUserQueryOverrides = {
+  staleTime?: number;
+  gcTime?: number;
+  refetchOnMount?: boolean | 'always';
+  retry?: boolean;
+};
+
+export function currentUserQueryOptions(
+  overrides: CurrentUserQueryOverrides = {},
+) {
+  return {
+    queryKey: CURRENT_USER_QUERY_KEY,
+    queryFn: fetchCurrentUser,
+    staleTime: overrides.staleTime ?? 60_000,
+    gcTime: overrides.gcTime ?? 300_000,
+    refetchOnMount: overrides.refetchOnMount ?? false,
+    retry: overrides.retry ?? false,
+  };
+}
+
 export async function fetchCurrentUser(): Promise<CurrentUser> {
   const { data } = await axiosPrivate.get<CurrentUser>('/users/me', {
     skipAuthRedirect: true,

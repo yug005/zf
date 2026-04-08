@@ -17,7 +17,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NotificationBell } from '../components/NotificationBell';
-import { fetchCurrentUser } from '../services/current-user';
+import { AUTH_HINT_STORAGE_KEY, currentUserQueryOptions } from '../services/current-user';
 import { QuickStartCard } from '../components/QuickStartCard';
 import { logoutSession } from '../services/api';
 import { PageMeta } from '../components/PageMeta';
@@ -41,20 +41,22 @@ export default function DashboardLayout() {
     isLoading: isUserLoading,
     isFetching: isUserFetching,
     isError: isUserError,
-  } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: fetchCurrentUser,
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: 'always',
-    retry: false,
-  });
+  } = useQuery(currentUserQueryOptions());
 
   useEffect(() => {
     if (!isUserLoading && !isUserFetching && (isUserError || !currentUser)) {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(AUTH_HINT_STORAGE_KEY);
+      }
       navigate('/login');
     }
   }, [currentUser, isUserLoading, isUserFetching, isUserError, navigate]);
+
+  useEffect(() => {
+    if (currentUser && typeof window !== 'undefined') {
+      window.localStorage.setItem(AUTH_HINT_STORAGE_KEY, '1');
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -62,6 +64,9 @@ export default function DashboardLayout() {
 
   const handleLogout = async () => {
     await logoutSession().catch(() => undefined);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(AUTH_HINT_STORAGE_KEY);
+    }
     queryClient.clear();
     navigate('/login');
   };
@@ -98,34 +103,60 @@ export default function DashboardLayout() {
     ? 'Monitor Details'
     : pageTitles[location.pathname] || 'Dashboard';
 
-  if (isUserLoading || isUserFetching) {
-    return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#040611] text-white">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-[8%] top-[10%] h-72 w-72 rounded-full bg-cyan-500/12 blur-[120px]" />
-          <div className="absolute bottom-[8%] right-[10%] h-80 w-80 rounded-full bg-emerald-500/10 blur-[140px]" />
-        </div>
-
-        <div className="relative text-center">
-          <motion.div
-            className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] border border-cyan-400/20 bg-white/[0.04] shadow-[0_0_60px_rgba(34,211,238,0.14)]"
-            animate={{ scale: [1, 1.06, 1], rotate: [0, 2, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <BrandLogo theme="dark" compact />
-          </motion.div>
-          <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.34em] text-cyan-300/70">
-            Syncing workspace
-          </p>
-          <p className="mt-3 text-sm text-slate-400">
-            Validating your session and loading the control layer.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!currentUser) {
+    if (isUserLoading || isUserFetching) {
+      return (
+        <div className="relative min-h-screen overflow-hidden bg-[#040611] font-sans text-slate-100">
+          <div className="pointer-events-none fixed inset-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,#050816_0%,#040611_100%)]" />
+            <div className="absolute left-[-12rem] top-[5rem] h-[28rem] w-[28rem] rounded-full bg-cyan-500/12 blur-[180px]" />
+            <div className="absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-emerald-500/10 blur-[160px]" />
+          </div>
+
+          <div className="relative z-10 flex min-h-screen gap-6 px-3 py-3 sm:px-4 sm:py-4 lg:gap-8 lg:px-5 lg:py-5">
+            <aside className={classNames(shellSurface, 'hidden w-[19rem] flex-col rounded-[30px] lg:flex')}>
+              <div className="border-b border-white/6 px-6 py-6">
+                <BrandLogo theme="dark" />
+              </div>
+              <div className="px-6 pt-5">
+                <div className="rounded-[26px] border border-white/8 bg-white/[0.03] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300/70">
+                    Production Space
+                  </p>
+                  <div className="mt-3 h-4 w-32 animate-pulse rounded bg-white/10" />
+                  <div className="mt-2 h-3 w-20 animate-pulse rounded bg-white/10" />
+                </div>
+              </div>
+              <nav className="flex-1 space-y-2 px-4 py-6">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="rounded-[22px] border border-white/6 bg-white/[0.03] px-4 py-3.5">
+                    <div className="h-4 w-28 animate-pulse rounded bg-white/10" />
+                  </div>
+                ))}
+              </nav>
+            </aside>
+
+            <main className="flex min-w-0 flex-1 flex-col">
+              <header className={classNames(shellSurface, 'sticky top-3 z-20 mb-6 flex min-h-[88px] items-center rounded-[30px] px-4 sm:px-5 lg:px-6')}>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-300/70">
+                    Zer0Friction Command Layer
+                  </p>
+                  <h1 className="mt-1 truncate text-xl font-semibold text-white sm:text-2xl">{activeTitle}</h1>
+                </div>
+                <div className="ml-auto flex items-center gap-3">
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+                </div>
+              </header>
+              <div className="flex-1">
+                <Outlet />
+              </div>
+            </main>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#040611] text-white">
         <p className="text-sm text-slate-400">Redirecting to sign in...</p>
