@@ -77,6 +77,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     return {
       id: user.id,
       email: user.email,
+      isAdmin,
       sessionVersion: user.sessionVersion,
       refreshToken,
     };

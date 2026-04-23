@@ -22,6 +22,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
 import { MonitorEngineModule } from './engine/monitor-engine.module.js';
 import { JwtAccessGuard } from './modules/auth/guards/jwt-access.guard.js';
 import { StatusPagesModule } from './status-pages/status-pages.module';
+import { SecurityModule } from './security/security.module.js';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { StatusPagesModule } from './status-pages/status-pages.module';
     ApiKeyModule,
     NotificationModule,
     StatusPagesModule,
+    SecurityModule,
   ],
   providers: [
     {

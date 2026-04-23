@@ -25,3 +25,6 @@ coverage/
 # Logs
 *.log
 npm-debug.log*
+
+# Private local runbooks / deployment notes
+README.local.md

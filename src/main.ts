@@ -49,9 +49,11 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const port = configService.get<number>('PORT', 3000);
-  await app.listen(port);
+  const host = configService.get<string>('HOST', '0.0.0.0');
+  await app.listen(port, host);
 
   logger.log(`Zer0Friction API running on ${backendUrl}`);
+  logger.log(`Listening on ${host}:${port}`);
   logger.log(`Frontend origin allowed: ${frontendUrl}`);
   logger.log(`Health check: ${backendUrl}/health`);
   logger.log(`Environment: ${configService.get<string>('NODE_ENV', 'development')}`);

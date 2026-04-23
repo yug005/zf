@@ -7,72 +7,74 @@ datasource db {
 }
 
 model User {
-  id                 String             @id @default(uuid())
-  email              String             @unique
-  archivedEmail      String?            @map("archived_email")
-  password           String
-  name               String?
-  avatarUrl          String?            @map("avatar_url")
-  isActive           Boolean            @default(true) @map("is_active")
-  isVerified         Boolean            @default(false) @map("is_verified")
-  archivedAt         DateTime?          @map("archived_at")
-  archivedReason     String?            @map("archived_reason")
-  sessionVersion     Int                @default(0) @map("session_version")
-  refreshTokenHash   String?            @map("refresh_token_hash")
-  resetTokenHash     String?            @map("reset_token_hash")
-  resetTokenExpires  DateTime?          @map("reset_token_expires")
-  verificationTokenHash String?         @map("verification_token_hash")
-  googleId           String?            @unique @map("google_id")
-  githubId           String?            @unique @map("github_id")
-  trialStartAt       DateTime           @map("trial_start_at")
-  trialEndAt         DateTime           @map("trial_end_at")
-  subscriptionPlan   SubscriptionPlan   @default(TRIAL) @map("subscription_plan")
-  razorpayCustomerId String?            @map("razorpay_customer_id")
-  subscriptionId     String?            @map("subscription_id")
-  subscriptionStatus SubscriptionStatus @default(TRIALING) @map("subscription_status")
-  monitorLimit       Int                @default(5) @map("monitor_limit")
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  apiKeys            ApiKey[]
-  projects           Project[]
-  subscriptionReminders SubscriptionReminder[]
-  inAppNotifications InAppNotification[]
-  statusPages        StatusPage[]
-  monitorSecrets     MonitorSecret[]
-  adminGrants        AdminGrant[]
-  adminAuditLogs     AdminAuditLog[]    @relation("AdminAuditActor")
-  adminGrantedAccess AdminGrant[]       @relation("AdminGrantActor")
-  paygMonthlyRecords EnterprisePaygMonthlyRecord[]
+  id                        String                        @id @default(uuid())
+  email                     String                        @unique
+  archivedEmail             String?                       @map("archived_email")
+  password                  String
+  name                      String?
+  avatarUrl                 String?                       @map("avatar_url")
+  isActive                  Boolean                       @default(true) @map("is_active")
+  isVerified                Boolean                       @default(false) @map("is_verified")
+  archivedAt                DateTime?                     @map("archived_at")
+  archivedReason            String?                       @map("archived_reason")
+  sessionVersion            Int                           @default(0) @map("session_version")
+  refreshTokenHash          String?                       @map("refresh_token_hash")
+  resetTokenHash            String?                       @map("reset_token_hash")
+  resetTokenExpires         DateTime?                     @map("reset_token_expires")
+  verificationTokenHash     String?                       @map("verification_token_hash")
+  googleId                  String?                       @unique @map("google_id")
+  githubId                  String?                       @unique @map("github_id")
+  trialStartAt              DateTime                      @map("trial_start_at")
+  trialEndAt                DateTime                      @map("trial_end_at")
+  subscriptionPlan          SubscriptionPlan              @default(TRIAL) @map("subscription_plan")
+  razorpayCustomerId        String?                       @map("razorpay_customer_id")
+  subscriptionId            String?                       @map("subscription_id")
+  subscriptionStatus        SubscriptionStatus            @default(TRIALING) @map("subscription_status")
+  monitorLimit              Int                           @default(5) @map("monitor_limit")
+  createdAt                 DateTime                      @default(now()) @map("created_at")
+  updatedAt                 DateTime                      @updatedAt @map("updated_at")
+  apiKeys                   ApiKey[]
+  projects                  Project[]
+  subscriptionReminders     SubscriptionReminder[]
+  inAppNotifications        InAppNotification[]
+  statusPages               StatusPage[]
+  monitorSecrets            MonitorSecret[]
+  adminGrants               AdminGrant[]
+  adminAuditLogs            AdminAuditLog[]               @relation("AdminAuditActor")
+  adminGrantedAccess        AdminGrant[]                  @relation("AdminGrantActor")
+  paygMonthlyRecords        EnterprisePaygMonthlyRecord[]
+  securityTargets           SecurityTarget[]
+  securitySubscriptionState SecuritySubscriptionState?
 
   @@map("users")
 }
 
 model AdminGrant {
-  id                       String              @id @default(uuid())
+  id                       String                @id @default(uuid())
   email                    String
-  userId                   String?             @map("user_id")
+  userId                   String?               @map("user_id")
   plan                     SubscriptionPlan
   enterpriseAccessMode     EnterpriseAccessMode? @map("enterprise_access_mode")
-  lifecycleStatus          GrantLifecycleStatus @default(PENDING) @map("lifecycle_status")
-  activationMode           GrantActivationMode @map("activation_mode")
-  startAt                  DateTime            @map("start_at")
-  endAt                    DateTime?           @map("end_at")
-  activatedAt              DateTime?           @map("activated_at")
-  revokedAt                DateTime?           @map("revoked_at")
-  supersededAt             DateTime?           @map("superseded_at")
-  actorUserId              String?             @map("actor_user_id")
-  actorEmail               String              @map("actor_email")
+  lifecycleStatus          GrantLifecycleStatus  @default(PENDING) @map("lifecycle_status")
+  activationMode           GrantActivationMode   @map("activation_mode")
+  startAt                  DateTime              @map("start_at")
+  endAt                    DateTime?             @map("end_at")
+  activatedAt              DateTime?             @map("activated_at")
+  revokedAt                DateTime?             @map("revoked_at")
+  supersededAt             DateTime?             @map("superseded_at")
+  actorUserId              String?               @map("actor_user_id")
+  actorEmail               String                @map("actor_email")
   note                     String?
   reason                   String?
-  lastNotificationType     String?             @map("last_notification_type")
-  lastNotificationSentAt   DateTime?           @map("last_notification_sent_at")
-  reminder7SentAt          DateTime?           @map("reminder_7_sent_at")
-  reminder1SentAt          DateTime?           @map("reminder_1_sent_at")
-  expiryNotificationSentAt DateTime?           @map("expiry_notification_sent_at")
-  createdAt                DateTime            @default(now()) @map("created_at")
-  updatedAt                DateTime            @updatedAt @map("updated_at")
-  user                     User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  actor                    User?               @relation("AdminGrantActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  lastNotificationType     String?               @map("last_notification_type")
+  lastNotificationSentAt   DateTime?             @map("last_notification_sent_at")
+  reminder7SentAt          DateTime?             @map("reminder_7_sent_at")
+  reminder1SentAt          DateTime?             @map("reminder_1_sent_at")
+  expiryNotificationSentAt DateTime?             @map("expiry_notification_sent_at")
+  createdAt                DateTime              @default(now()) @map("created_at")
+  updatedAt                DateTime              @updatedAt @map("updated_at")
+  user                     User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  actor                    User?                 @relation("AdminGrantActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([email])
   @@index([userId])
@@ -81,19 +83,19 @@ model AdminGrant {
 }
 
 model EnterprisePaygMonthlyRecord {
-  id                  String               @id @default(uuid())
-  userId              String?              @map("user_id")
-  email               String
-  monthStart          DateTime             @map("month_start")
-  monthEnd            DateTime             @map("month_end")
-  tenSecondCount      Int                  @default(0) @map("ten_second_count")
-  thirtySecondCount   Int                  @default(0) @map("thirty_second_count")
-  sixtyPlusCount      Int                  @default(0) @map("sixty_plus_count")
-  estimatedAmountInr  Int                  @map("estimated_amount_inr")
-  finalizedAt         DateTime?            @map("finalized_at")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  user                User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                 String    @id @default(uuid())
+  userId             String?   @map("user_id")
+  email              String
+  monthStart         DateTime  @map("month_start")
+  monthEnd           DateTime  @map("month_end")
+  tenSecondCount     Int       @default(0) @map("ten_second_count")
+  thirtySecondCount  Int       @default(0) @map("thirty_second_count")
+  sixtyPlusCount     Int       @default(0) @map("sixty_plus_count")
+  estimatedAmountInr Int       @map("estimated_amount_inr")
+  finalizedAt        DateTime? @map("finalized_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  user               User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([email, monthStart])
   @@index([userId, monthStart])
@@ -101,15 +103,15 @@ model EnterprisePaygMonthlyRecord {
 }
 
 model AdminAuditLog {
-  id            String   @id @default(uuid())
-  actorUserId    String?  @map("actor_user_id")
-  actorEmail     String   @map("actor_email")
-  action         String
-  targetUserId   String?  @map("target_user_id")
-  targetEmail    String?  @map("target_email")
-  metadata       Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-  actor          User?    @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  id           String   @id @default(uuid())
+  actorUserId  String?  @map("actor_user_id")
+  actorEmail   String   @map("actor_email")
+  action       String
+  targetUserId String?  @map("target_user_id")
+  targetEmail  String?  @map("target_email")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  actor        User?    @relation("AdminAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([action, createdAt])
   @@index([targetUserId, createdAt])
@@ -133,57 +135,58 @@ model ApiKey {
 }
 
 model Project {
-  id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
-  userId      String    @map("user_id")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  monitors    Monitor[]
-  changeEvents ChangeEvent[]
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  description     String?
+  userId          String           @map("user_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  monitors        Monitor[]
+  changeEvents    ChangeEvent[]
+  securityTargets SecurityTarget[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("projects")
 }
 
 model Monitor {
-  id                  String        @id @default(uuid())
+  id                  String              @id @default(uuid())
   name                String
   url                 String
-  type                MonitorType   @default(HTTP)
-  serviceName         String?       @map("service_name")
-  featureName         String?       @map("feature_name")
-  customerJourney     String?       @map("customer_journey")
-  teamOwner           String?       @map("team_owner")
+  type                MonitorType         @default(HTTP)
+  serviceName         String?             @map("service_name")
+  featureName         String?             @map("feature_name")
+  customerJourney     String?             @map("customer_journey")
+  teamOwner           String?             @map("team_owner")
   region              String?
   businessCriticality BusinessCriticality @default(MEDIUM) @map("business_criticality")
-  slaTier             SlaTier       @default(STANDARD) @map("sla_tier")
-  httpMethod          HttpMethod    @default(GET) @map("http_method")
-  intervalSeconds     Int           @default(60) @map("interval_seconds")
-  timeoutMs           Int           @default(30000) @map("timeout_ms")
-  expectedStatus      Int?          @map("expected_status")
-  status              MonitorStatus @default(PAUSED)
-  isActive            Boolean       @default(true) @map("is_active")
-  pausedByBilling     Boolean       @default(false) @map("paused_by_billing")
+  slaTier             SlaTier             @default(STANDARD) @map("sla_tier")
+  httpMethod          HttpMethod          @default(GET) @map("http_method")
+  intervalSeconds     Int                 @default(60) @map("interval_seconds")
+  timeoutMs           Int                 @default(30000) @map("timeout_ms")
+  expectedStatus      Int?                @map("expected_status")
+  status              MonitorStatus       @default(PAUSED)
+  isActive            Boolean             @default(true) @map("is_active")
+  pausedByBilling     Boolean             @default(false) @map("paused_by_billing")
   headers             Json?
   body                Json?
-  authConfig          Json?         @map("auth_config")
-  validationConfig    Json?         @map("validation_config")
-  alertConfig         Json?         @map("alert_config")
-  probeRegions        Json?         @map("probe_regions")
-  retries             Int           @default(0)
-  consecutiveFailures Int           @default(0) @map("consecutive_failures")
-  failureThreshold    Int           @default(3) @map("failure_threshold")
-  projectId           String        @map("project_id")
-  createdAt           DateTime      @default(now()) @map("created_at")
-  updatedAt           DateTime      @updatedAt @map("updated_at")
-  lastCheckedAt       DateTime?     @map("last_checked_at")
+  authConfig          Json?               @map("auth_config")
+  validationConfig    Json?               @map("validation_config")
+  alertConfig         Json?               @map("alert_config")
+  probeRegions        Json?               @map("probe_regions")
+  retries             Int                 @default(0)
+  consecutiveFailures Int                 @default(0) @map("consecutive_failures")
+  failureThreshold    Int                 @default(3) @map("failure_threshold")
+  projectId           String              @map("project_id")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  lastCheckedAt       DateTime?           @map("last_checked_at")
   alerts              Alert[]
   checkResults        CheckResult[]
   authSecrets         MonitorSecretLink[]
-  project             Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project             Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   statusPages         StatusPageMonitor[]
   incidents           Incident[]
   changeEvents        ChangeEvent[]
@@ -212,23 +215,23 @@ model CheckResult {
 }
 
 model Alert {
-  id             String       @id @default(uuid())
-  channel        AlertChannel
-  status         AlertStatus  @default(TRIGGERED)
-  message        String
-  metadata       Json?
-  deliveryAttempts Int        @default(0) @map("delivery_attempts")
-  lastDeliveryAttemptAt DateTime? @map("last_delivery_attempt_at")
-  lastDeliveredAt  DateTime?  @map("last_delivered_at")
-  lastSuppressedAt DateTime?  @map("last_suppressed_at")
-  deliveryError   String?     @map("delivery_error")
-  acknowledgedAt DateTime?    @map("acknowledged_at")
-  resolvedAt     DateTime?    @map("resolved_at")
-  monitorId      String       @map("monitor_id")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
-  monitor        Monitor      @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  deliveries     AlertDelivery[]
+  id                    String          @id @default(uuid())
+  channel               AlertChannel
+  status                AlertStatus     @default(TRIGGERED)
+  message               String
+  metadata              Json?
+  deliveryAttempts      Int             @default(0) @map("delivery_attempts")
+  lastDeliveryAttemptAt DateTime?       @map("last_delivery_attempt_at")
+  lastDeliveredAt       DateTime?       @map("last_delivered_at")
+  lastSuppressedAt      DateTime?       @map("last_suppressed_at")
+  deliveryError         String?         @map("delivery_error")
+  acknowledgedAt        DateTime?       @map("acknowledged_at")
+  resolvedAt            DateTime?       @map("resolved_at")
+  monitorId             String          @map("monitor_id")
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+  monitor               Monitor         @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  deliveries            AlertDelivery[]
 
   @@index([monitorId])
   @@index([status])
@@ -236,16 +239,16 @@ model Alert {
 }
 
 model WebhookEventLog {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   provider       String
-  eventType      String   @map("event_type")
-  externalId     String?  @map("external_id")
+  eventType      String    @map("event_type")
+  externalId     String?   @map("external_id")
   payload        Json
-  signatureValid Boolean  @default(false) @map("signature_valid")
-  processed      Boolean  @default(false)
+  signatureValid Boolean   @default(false) @map("signature_valid")
+  processed      Boolean   @default(false)
   processedAt    DateTime? @map("processed_at")
-  errorMessage   String?  @map("error_message")
-  createdAt      DateTime @default(now()) @map("created_at")
+  errorMessage   String?   @map("error_message")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
   @@index([provider, eventType])
   @@index([externalId])
@@ -253,13 +256,13 @@ model WebhookEventLog {
 }
 
 model SubscriptionReminder {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  remindAt    DateTime @map("remind_at")
-  daysBefore  Int      @map("days_before") // 7, 3, or 1
-  sentAt      DateTime @default(now()) @map("sent_at")
-  channel     String   @default("EMAIL") // EMAIL or IN_APP
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  remindAt   DateTime @map("remind_at")
+  daysBefore Int      @map("days_before") // 7, 3, or 1
+  sentAt     DateTime @default(now()) @map("sent_at")
+  channel    String   @default("EMAIL") // EMAIL or IN_APP
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, remindAt])
   @@map("subscription_reminders")
@@ -268,7 +271,7 @@ model SubscriptionReminder {
 model InAppNotification {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
-  type      String   // TRIAL_EXPIRING, TRIAL_EXPIRED, MONITOR_LIMIT_REACHED, UPGRADE_REQUIRED
+  type      String // TRIAL_EXPIRING, TRIAL_EXPIRED, MONITOR_LIMIT_REACHED, UPGRADE_REQUIRED
   title     String
   message   String
   read      Boolean  @default(false)
@@ -312,10 +315,10 @@ model MonitorSecret {
 }
 
 model MonitorSecretLink {
-  monitorId String @map("monitor_id")
-  secretId  String @map("secret_id")
+  monitorId String        @map("monitor_id")
+  secretId  String        @map("secret_id")
   role      String
-  monitor   Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitor   Monitor       @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   secret    MonitorSecret @relation(fields: [secretId], references: [id], onDelete: Cascade)
 
   @@id([monitorId, secretId, role])
@@ -324,19 +327,19 @@ model MonitorSecretLink {
 }
 
 model AlertDelivery {
-  id             String               @id @default(uuid())
-  alertId        String               @map("alert_id")
-  channel        AlertChannel
-  recipient      String?
-  status         AlertDeliveryStatus  @default(PENDING)
-  deliveryAttempts Int                @default(0) @map("delivery_attempts")
-  lastAttemptAt  DateTime?            @map("last_attempt_at")
-  deliveredAt    DateTime?            @map("delivered_at")
-  errorMessage   String?              @map("error_message")
-  metadata       Json?
-  createdAt      DateTime             @default(now()) @map("created_at")
-  updatedAt      DateTime             @updatedAt @map("updated_at")
-  alert          Alert                @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  id               String              @id @default(uuid())
+  alertId          String              @map("alert_id")
+  channel          AlertChannel
+  recipient        String?
+  status           AlertDeliveryStatus @default(PENDING)
+  deliveryAttempts Int                 @default(0) @map("delivery_attempts")
+  lastAttemptAt    DateTime?           @map("last_attempt_at")
+  deliveredAt      DateTime?           @map("delivered_at")
+  errorMessage     String?             @map("error_message")
+  metadata         Json?
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  alert            Alert               @relation(fields: [alertId], references: [id], onDelete: Cascade)
 
   @@index([alertId])
   @@index([status])
@@ -354,15 +357,15 @@ model StatusPageMonitor {
 }
 
 model Incident {
-  id          String         @id @default(uuid())
-  monitorId   String         @map("monitor_id")
-  status      IncidentStatus @default(INVESTIGATING)
-  message     String
-  resolvedAt  DateTime?      @map("resolved_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  id         String         @id @default(uuid())
+  monitorId  String         @map("monitor_id")
+  status     IncidentStatus @default(INVESTIGATING)
+  message    String
+  resolvedAt DateTime?      @map("resolved_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
 
-  monitor     Monitor        @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
 
   @@index([monitorId])
   @@index([status])
@@ -370,30 +373,30 @@ model Incident {
 }
 
 model ChangeEvent {
-  id          String           @id @default(uuid())
+  id          String            @id @default(uuid())
   type        ChangeEventType
   source      ChangeEventSource @default(MANUAL)
-  externalId  String?          @map("external_id")
+  externalId  String?           @map("external_id")
   title       String
   summary     String?
-  serviceName String?          @map("service_name")
+  serviceName String?           @map("service_name")
   environment String?
   version     String?
   metadata    Json?
-  happenedAt  DateTime         @map("happened_at")
-  watchUntil  DateTime?        @map("watch_until")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  projectId   String           @map("project_id")
-  monitorId   String?          @map("monitor_id")
+  happenedAt  DateTime          @map("happened_at")
+  watchUntil  DateTime?         @map("watch_until")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  projectId   String            @map("project_id")
+  monitorId   String?           @map("monitor_id")
 
-  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  monitor     Monitor?         @relation(fields: [monitorId], references: [id], onDelete: SetNull)
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  monitor Monitor? @relation(fields: [monitorId], references: [id], onDelete: SetNull)
 
+  @@unique([projectId, source, externalId])
   @@index([projectId, happenedAt])
   @@index([monitorId, happenedAt])
   @@index([type, source])
-  @@unique([projectId, source, externalId])
   @@map("change_events")
 }
 
@@ -536,4 +539,723 @@ enum MonitorSecretKind {
   BASIC_USERNAME
   BASIC_PASSWORD
   GENERIC
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ─── Security Scanning Domain ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+
+model SecurityTarget {
+  id                String                  @id @default(uuid())
+  userId            String                  @map("user_id")
+  name              String
+  baseUrl           String                  @map("base_url")
+  targetKind        TargetKind              @default(API) @map("target_kind")
+  environment       TargetEnvironment       @default(PRODUCTION)
+  criticality       AssetCriticality        @default(MEDIUM)
+  description       String?
+  metadata          Json?
+  verificationState TargetVerificationState @default(UNVERIFIED) @map("verification_state")
+  projectId         String?                 @map("project_id")
+  monitorId         String?                 @map("monitor_id")
+  freeScanUsed      Boolean                 @default(false) @map("free_scan_used")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  user              User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project           Project?                    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  verifications     SecurityVerification[]
+  scanProfiles      SecurityScanProfile[]
+  scans             SecurityScan[]
+  endpoints         SecurityEndpointInventory[]
+  assets            SecurityAsset[]
+  collectors        SecurityCollector[]
+  attackPaths       SecurityAttackPath[]
+  evidenceArtifacts SecurityEvidenceArtifact[]
+  observations      SecurityObservation[]
+  relationships     SecurityRelationship[]
+  controlVerdicts   SecurityControlVerdict[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("security_targets")
+}
+
+model SecurityVerification {
+  id             String             @id @default(uuid())
+  targetId       String             @map("target_id")
+  method         VerificationMethod
+  token          String
+  challengeValue String?            @map("challenge_value")
+  state          VerificationState  @default(PENDING)
+  verifiedScope  String?            @map("verified_scope")
+  completedAt    DateTime?          @map("completed_at")
+  expiresAt      DateTime?          @map("expires_at")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  target SecurityTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId])
+  @@index([token])
+  @@map("security_verifications")
+}
+
+model SecurityScanProfile {
+  id                   String            @id @default(uuid())
+  targetId             String            @map("target_id")
+  tier                 ScanTier          @default(STANDARD)
+  executionMode        ScanExecutionMode @default(STANDARD) @map("execution_mode")
+  enabledCategories    Json?             @map("enabled_categories")
+  assetScope           Json?             @map("asset_scope")
+  authenticatedContext Json?             @map("authenticated_context")
+  cadence              ScanCadence?
+  isActive             Boolean           @default(true) @map("is_active")
+  lastScheduledAt      DateTime?         @map("last_scheduled_at")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  target SecurityTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId])
+  @@map("security_scan_profiles")
+}
+
+model SecurityScan {
+  id                   String            @id @default(uuid())
+  targetId             String            @map("target_id")
+  profileId            String?           @map("profile_id")
+  tier                 ScanTier
+  executionMode        ScanExecutionMode @default(STANDARD) @map("execution_mode")
+  status               ScanStatus        @default(QUEUED)
+  stage                ScanStage         @default(TARGET_PREP) @map("current_stage")
+  stageProgress        Json?             @map("stage_progress")
+  targetSnapshot       Json?             @map("target_snapshot")
+  plannerSummary       Json?             @map("planner_summary")
+  assetScope           Json?             @map("asset_scope")
+  authenticatedContext Json?             @map("authenticated_context")
+  score                Float?
+  riskLevel            RiskLevel?        @map("risk_level")
+  severityCounts       Json?             @map("severity_counts")
+  summary              String?
+  reportMetadata       Json?             @map("report_metadata")
+  errorMessage         String?           @map("error_message")
+  startedAt            DateTime?         @map("started_at")
+  completedAt          DateTime?         @map("completed_at")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  target            SecurityTarget             @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  findings          SecurityFinding[]
+  observations      SecurityObservation[]
+  evidenceArtifacts SecurityEvidenceArtifact[]
+  controlVerdicts   SecurityControlVerdict[]
+  attackPaths       SecurityAttackPath[]
+
+  @@index([targetId, createdAt])
+  @@index([status])
+  @@map("security_scans")
+}
+
+model SecurityFinding {
+  id                String                 @id @default(uuid())
+  scanId            String                 @map("scan_id")
+  observationId     String?                @map("observation_id")
+  primaryEvidenceId String?                @map("primary_evidence_id")
+  category          FindingCategory
+  title             String
+  severity          FindingSeverity
+  exploitability    FindingExploitability  @default(THEORETICAL)
+  confidence        FindingConfidence      @default(MEDIUM)
+  validationState   FindingValidationState @default(THEORETICAL) @map("validation_state")
+  endpoint          String?
+  httpMethod        String?                @map("http_method")
+  parameter         String?
+  scenarioPackSlug  String?                @map("scenario_pack_slug")
+  businessAsset     String?                @map("business_asset")
+  attackFlow        Json?                  @map("attack_flow")
+  evidence          Json?
+  affectedAssets    Json?                  @map("affected_assets")
+  attckTechniques   Json?                  @map("attck_techniques")
+  labels            Json?
+  remediation       String?
+  references        Json?
+  falsePositive     Boolean                @default(false) @map("false_positive")
+  fpNotes           String?                @map("fp_notes")
+  status            FindingStatus          @default(OPEN)
+  fingerprint       String?
+  createdAt         DateTime               @default(now()) @map("created_at")
+  updatedAt         DateTime               @updatedAt @map("updated_at")
+
+  scan              SecurityScan               @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  observation       SecurityObservation?       @relation(fields: [observationId], references: [id], onDelete: SetNull)
+  primaryEvidence   SecurityEvidenceArtifact?  @relation("FindingPrimaryEvidence", fields: [primaryEvidenceId], references: [id], onDelete: SetNull)
+  evidenceArtifacts SecurityEvidenceArtifact[] @relation("FindingEvidenceArtifacts")
+
+  @@index([scanId, severity])
+  @@index([scanId, category])
+  @@index([fingerprint])
+  @@map("security_findings")
+}
+
+model SecurityEndpointInventory {
+  id          String            @id @default(uuid())
+  targetId    String            @map("target_id")
+  scanId      String?           @map("scan_id")
+  assetId     String?           @map("asset_id")
+  path        String
+  method      String
+  source      String
+  confidence  FindingConfidence @default(MEDIUM)
+  firstSeenAt DateTime          @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime          @default(now()) @map("last_seen_at")
+  metadata    Json?
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  target SecurityTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  asset  SecurityAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@unique([targetId, path, method])
+  @@index([targetId])
+  @@map("security_endpoint_inventory")
+}
+
+model SecurityCollector {
+  id                String            @id @default(uuid())
+  targetId          String            @map("target_id")
+  name              String
+  status            CollectorStatus   @default(PENDING)
+  environment       TargetEnvironment @default(PRODUCTION)
+  capabilities      Json?
+  allowlist         Json?
+  policy            Json?
+  registrationToken String?           @map("registration_token")
+  lastHeartbeatAt   DateTime?         @map("last_heartbeat_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  target            SecurityTarget             @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  assets            SecurityAsset[]
+  evidenceArtifacts SecurityEvidenceArtifact[]
+  controlVerdicts   SecurityControlVerdict[]
+
+  @@index([targetId])
+  @@index([status])
+  @@map("security_collectors")
+}
+
+model SecurityAsset {
+  id            String            @id @default(uuid())
+  targetId      String            @map("target_id")
+  collectorId   String?           @map("collector_id")
+  parentAssetId String?           @map("parent_asset_id")
+  kind          AssetKind
+  name          String
+  hostname      String?
+  address       String?
+  externalId    String?           @map("external_id")
+  environment   TargetEnvironment @default(PRODUCTION)
+  criticality   AssetCriticality  @default(MEDIUM)
+  reachability  AssetReachability @default(EXTERNAL)
+  tags          Json?
+  metadata      Json?
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  target                SecurityTarget              @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  collector             SecurityCollector?          @relation(fields: [collectorId], references: [id], onDelete: SetNull)
+  parentAsset           SecurityAsset?              @relation("SecurityAssetHierarchy", fields: [parentAssetId], references: [id], onDelete: SetNull)
+  childAssets           SecurityAsset[]             @relation("SecurityAssetHierarchy")
+  incomingRelationships SecurityRelationship[]      @relation("RelationshipToAsset")
+  outgoingRelationships SecurityRelationship[]      @relation("RelationshipFromAsset")
+  entryAttackPaths      SecurityAttackPath[]        @relation("AttackPathEntryAsset")
+  crownJewelPaths       SecurityAttackPath[]        @relation("AttackPathCrownJewelAsset")
+  endpointInventory     SecurityEndpointInventory[]
+
+  @@index([targetId])
+  @@index([collectorId])
+  @@index([kind, environment])
+  @@map("security_assets")
+}
+
+model SecurityRelationship {
+  id          String                @id @default(uuid())
+  targetId    String                @map("target_id")
+  fromAssetId String                @map("from_asset_id")
+  toAssetId   String                @map("to_asset_id")
+  kind        AssetRelationshipKind
+  confidence  FindingConfidence     @default(MEDIUM)
+  metadata    Json?
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+
+  target    SecurityTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  fromAsset SecurityAsset  @relation("RelationshipFromAsset", fields: [fromAssetId], references: [id], onDelete: Cascade)
+  toAsset   SecurityAsset  @relation("RelationshipToAsset", fields: [toAssetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId])
+  @@index([fromAssetId, toAssetId])
+  @@map("security_relationships")
+}
+
+model SecurityScenarioPack {
+  id                  String              @id @default(uuid())
+  slug                String              @unique
+  name                String
+  family              ScenarioPackFamily
+  version             String
+  executionMode       ScanExecutionMode   @default(STANDARD) @map("execution_mode")
+  safetyLevel         ScenarioSafetyLevel @default(SAFE) @map("safety_level")
+  description         String?
+  supportedAssetKinds Json?               @map("supported_asset_kinds")
+  attckTechniques     Json?               @map("attck_techniques")
+  prerequisites       Json?
+  packMetadata        Json?               @map("pack_metadata")
+  isSystem            Boolean             @default(true) @map("is_system")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  steps SecurityScenarioStep[]
+
+  @@index([family, executionMode])
+  @@map("security_scenario_packs")
+}
+
+model SecurityScenarioStep {
+  id                String           @id @default(uuid())
+  scenarioPackId    String           @map("scenario_pack_id")
+  orderIndex        Int              @map("order_index")
+  stepType          ScenarioStepType @map("step_type")
+  title             String
+  config            Json?
+  verificationRule  Json?            @map("verification_rule")
+  requiresCollector Boolean          @default(false) @map("requires_collector")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  scenarioPack SecurityScenarioPack @relation(fields: [scenarioPackId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioPackId, orderIndex])
+  @@map("security_scenario_steps")
+}
+
+model SecurityObservation {
+  id               String                @id @default(uuid())
+  scanId           String                @map("scan_id")
+  targetId         String                @map("target_id")
+  category         FindingCategory
+  title            String
+  severity         FindingSeverity
+  exploitability   FindingExploitability @default(THEORETICAL)
+  confidence       FindingConfidence     @default(MEDIUM)
+  status           ObservationStatus     @default(PENDING)
+  proofType        ObservationProofType  @default(HEURISTIC) @map("proof_type")
+  scenarioPackSlug String?               @map("scenario_pack_slug")
+  endpoint         String?
+  httpMethod       String?               @map("http_method")
+  parameter        String?
+  evidenceSummary  Json?                 @map("evidence_summary")
+  affectedAssets   Json?                 @map("affected_assets")
+  attckTechniques  Json?                 @map("attck_techniques")
+  labels           Json?
+  remediation      String?
+  references       Json?
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
+
+  scan              SecurityScan               @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  target            SecurityTarget             @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  findings          SecurityFinding[]
+  evidenceArtifacts SecurityEvidenceArtifact[]
+
+  @@index([scanId, status])
+  @@index([targetId, category])
+  @@map("security_observations")
+}
+
+model SecurityEvidenceArtifact {
+  id            String               @id @default(uuid())
+  targetId      String               @map("target_id")
+  scanId        String?              @map("scan_id")
+  observationId String?              @map("observation_id")
+  findingId     String?              @map("finding_id")
+  collectorId   String?              @map("collector_id")
+  attackPathId  String?              @map("attack_path_id")
+  kind          EvidenceArtifactKind
+  name          String
+  contentType   String?              @map("content_type")
+  storageKey    String?              @map("storage_key")
+  summary       Json?
+  rawPayload    Json?                @map("raw_payload")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  target             SecurityTarget           @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  scan               SecurityScan?            @relation(fields: [scanId], references: [id], onDelete: SetNull)
+  observation        SecurityObservation?     @relation(fields: [observationId], references: [id], onDelete: SetNull)
+  finding            SecurityFinding?         @relation("FindingEvidenceArtifacts", fields: [findingId], references: [id], onDelete: SetNull)
+  collector          SecurityCollector?       @relation(fields: [collectorId], references: [id], onDelete: SetNull)
+  attackPath         SecurityAttackPath?      @relation(fields: [attackPathId], references: [id], onDelete: SetNull)
+  primaryForFindings SecurityFinding[]        @relation("FindingPrimaryEvidence")
+  controlVerdicts    SecurityControlVerdict[]
+
+  @@index([targetId, kind])
+  @@index([scanId])
+  @@index([observationId])
+  @@map("security_evidence_artifacts")
+}
+
+model SecurityControlVerdict {
+  id                 String               @id @default(uuid())
+  targetId           String               @map("target_id")
+  scanId             String               @map("scan_id")
+  collectorId        String?              @map("collector_id")
+  evidenceArtifactId String?              @map("evidence_artifact_id")
+  control            String
+  status             ControlVerdictStatus
+  expected           Json?
+  observed           Json?
+  detectionSource    String?              @map("detection_source")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+
+  target           SecurityTarget            @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  scan             SecurityScan              @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  collector        SecurityCollector?        @relation(fields: [collectorId], references: [id], onDelete: SetNull)
+  evidenceArtifact SecurityEvidenceArtifact? @relation(fields: [evidenceArtifactId], references: [id], onDelete: SetNull)
+
+  @@index([targetId, scanId])
+  @@index([status])
+  @@map("security_control_verdicts")
+}
+
+model SecurityAttackPath {
+  id                String   @id @default(uuid())
+  targetId          String   @map("target_id")
+  scanId            String   @map("scan_id")
+  title             String
+  summary           String?
+  entryAssetId      String?  @map("entry_asset_id")
+  crownJewelAssetId String?  @map("crown_jewel_asset_id")
+  score             Float
+  techniqueChain    Json?    @map("technique_chain")
+  prerequisiteNodes Json?    @map("prerequisite_nodes")
+  pathNodes         Json?    @map("path_nodes")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  target            SecurityTarget             @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  scan              SecurityScan               @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  entryAsset        SecurityAsset?             @relation("AttackPathEntryAsset", fields: [entryAssetId], references: [id], onDelete: SetNull)
+  crownJewelAsset   SecurityAsset?             @relation("AttackPathCrownJewelAsset", fields: [crownJewelAssetId], references: [id], onDelete: SetNull)
+  evidenceArtifacts SecurityEvidenceArtifact[]
+
+  @@index([targetId, scanId])
+  @@index([score])
+  @@map("security_attack_paths")
+}
+
+model SecuritySubscriptionState {
+  id                 String            @id @default(uuid())
+  userId             String            @unique @map("user_id")
+  plan               SecurityPlan      @default(FREE)
+  status             SecuritySubStatus @default(ACTIVE)
+  freeScanQuota      Int               @default(1) @map("free_scan_quota")
+  freeScanUsed       Int               @default(0) @map("free_scan_used")
+  allowedCadences    Json?             @map("allowed_cadences")
+  maxTargets         Int               @default(1) @map("max_targets")
+  subscriptionId     String?           @map("subscription_id")
+  currentPeriodStart DateTime?         @map("current_period_start")
+  currentPeriodEnd   DateTime?         @map("current_period_end")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("security_subscription_states")
+}
+
+// ─── Security Enums ───────────────────────────────────────────────
+
+enum TargetVerificationState {
+  UNVERIFIED
+  OWNERSHIP_CONFIRMED
+  DNS_VERIFIED
+  HTTP_VERIFIED
+}
+
+enum VerificationMethod {
+  OWNERSHIP_DECLARATION
+  DNS_TXT
+  HTTP_TOKEN
+}
+
+enum VerificationState {
+  PENDING
+  VERIFIED
+  FAILED
+  EXPIRED
+}
+
+enum TargetKind {
+  WEB_APP
+  API
+  DOMAIN
+  CLOUD_ACCOUNT
+  IDENTITY_TENANT
+  HOST
+  COLLECTOR
+}
+
+enum TargetEnvironment {
+  LAB
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum AssetKind {
+  WEB_APP
+  API
+  DOMAIN
+  CLOUD_ACCOUNT
+  IDENTITY_TENANT
+  HOST
+  COLLECTOR
+  ENDPOINT_GROUP
+  CROWN_JEWEL
+  CLOUD_STORAGE
+  CDN
+}
+
+enum AssetReachability {
+  EXTERNAL
+  INTERNAL
+  HYBRID
+}
+
+enum AssetCriticality {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AssetRelationshipKind {
+  HOSTS
+  DEPENDS_ON
+  EXPOSES
+  TRUSTS
+  CAN_ASSUME_ROLE
+  CAN_REACH
+}
+
+enum ScanTier {
+  STANDARD
+  ADVANCED
+  EMULATION
+  CONTINUOUS_VALIDATION
+}
+
+enum ScanExecutionMode {
+  STANDARD
+  ADVANCED
+  EMULATION
+  CONTINUOUS_VALIDATION
+}
+
+enum ScanCadence {
+  ONCE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  TIMED_OUT
+  CANCELLED
+}
+
+enum ScanStage {
+  TARGET_PREP
+  VERIFICATION_CHECK
+  ASSET_DISCOVERY
+  ENDPOINT_INVENTORY
+  PASSIVE_ANALYSIS
+  ACTIVE_PROBES
+  TARGET_CLASSIFICATION
+  SCENARIO_PLANNING
+  SCENARIO_EXECUTION
+  OBSERVATION_VERIFICATION
+  VALIDATION_LOOP
+  ATTACK_PATH_ANALYSIS
+  SCORING
+  HISTORICAL_COMPARISON
+  REPORT_GENERATION
+  DONE
+}
+
+enum RiskLevel {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+  SECURE
+}
+
+enum FindingCategory {
+  AUTH_POSTURE
+  BROKEN_ACCESS_CONTROL
+  MASS_ASSIGNMENT
+  SECURITY_MISCONFIGURATION
+  INJECTION_DETECTION
+  SSRF_POSTURE
+  RESOURCE_ABUSE
+  ENDPOINT_DISCOVERY
+  SENSITIVE_DATA_EXPOSURE
+  TLS_POSTURE
+  CORS_MISCONFIGURATION
+  HEADER_SECURITY
+  DEBUG_EXPOSURE
+  TECH_DISCLOSURE
+  XSS_DETECTION
+  OPEN_REDIRECT
+  PATH_TRAVERSAL
+  HEADER_INJECTION
+  SSTI_DETECTION
+  COMMAND_INJECTION
+  BUSINESS_LOGIC
+  DOM_XSS
+  SECRET_EXPOSURE
+  CLOUD_MISCONFIG
+  API_ABUSE
+  PERFORMANCE_RISK
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}
+
+enum FindingExploitability {
+  PROVEN
+  PROBABLE
+  THEORETICAL
+}
+
+enum FindingValidationState {
+  VALIDATED
+  PROBABLE
+  THEORETICAL
+  LAB_ONLY
+  UNCONFIRMED
+}
+
+enum FindingConfidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ObservationStatus {
+  PENDING
+  VERIFIED
+  SUPPRESSED
+}
+
+enum ObservationProofType {
+  HEURISTIC
+  RESPONSE_MATCH
+  AUTH_BYPASS
+  POLICY_MISMATCH
+  ATTACK_PATH
+  CONTROL_GAP
+}
+
+enum FindingStatus {
+  OPEN
+  RESOLVED
+  FALSE_POSITIVE
+  ACCEPTED_RISK
+  WONT_FIX
+}
+
+enum CollectorStatus {
+  PENDING
+  ACTIVE
+  DEGRADED
+  OFFLINE
+  REVOKED
+}
+
+enum EvidenceArtifactKind {
+  HTTP_TRANSCRIPT
+  RESPONSE_HEADERS
+  DNS_ANSWER
+  DNS_RECORD
+  SCREENSHOT
+  CLOUD_FINDING
+  DETECTOR_VERDICT
+  REQUEST_REPLAY
+  ATTACK_PATH
+  CERTIFICATE_INFO
+  JS_ANALYSIS
+  STORAGE_LEAK
+  STATE_TRANSITION
+  SEQUENCE_TRACE
+}
+
+enum ScenarioPackFamily {
+  SURFACE_VALIDATION
+  API_EXPOSURE
+  IDENTITY_AND_SECRETS
+  CLOUD_AND_PERIMETER
+  DETECTION_VALIDATION
+}
+
+enum ScenarioSafetyLevel {
+  SAFE
+  GUARDED
+  COLLECTOR_ONLY
+}
+
+enum ScenarioStepType {
+  HTTP_REQUEST
+  DNS_QUERY
+  HEADER_MUTATION
+  AUTH_WORKFLOW
+  CLOUD_READ
+  IDENTITY_ENUM
+  COLLECTOR_ACTION
+  DETECTION_ASSERTION
+}
+
+enum ControlVerdictStatus {
+  PASSED
+  FAILED
+  DEGRADED
+  NOT_OBSERVED
+}
+
+enum SecurityPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SecuritySubStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PAST_DUE
 }

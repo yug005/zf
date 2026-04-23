@@ -20,6 +20,7 @@ const AuthSuccess = lazy(() => import('./pages/AuthSuccess'));
 const HowToUse = lazy(() => import('./pages/HowToUse'));
 const CliPage = lazy(() => import('./pages/CliPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
+const SecurityPricingPage = lazy(() => import('./pages/security/SecurityPricingPage'));
 const WebsiteMonitoring = lazy(() => import('./pages/WebsiteMonitoring'));
 const ApiMonitoring = lazy(() => import('./pages/ApiMonitoring'));
 const StatusPagesFeature = lazy(() => import('./pages/StatusPagesFeature'));
@@ -40,6 +41,11 @@ const Billing = lazy(() => import('./pages/Billing'));
 const Admin = lazy(() => import('./pages/Admin'));
 const ApiKeys = lazy(() => import('./pages/ApiKeys'));
 const ExpiredState = lazy(() => import('./pages/ExpiredState'));
+const SecurityDashboard = lazy(() => import('./pages/security/SecurityDashboard'));
+const SecurityOnboarding = lazy(() => import('./pages/security/SecurityOnboarding'));
+const ScanConfiguration = lazy(() => import('./pages/security/ScanConfiguration'));
+const ExecutiveReport = lazy(() => import('./pages/security/ExecutiveReport'));
+const ScanHistory = lazy(() => import('./pages/security/ScanHistory'));
 
 const INITIAL_BOOT_STORAGE_KEY = 'zf-initial-boot-complete-v2';
 const FIRST_BOOT_DURATION_MS = 2400;
@@ -140,6 +146,7 @@ function AppRouter() {
           <Route path="/how-to-use" element={<HowToUse />} />
           <Route path="/cli" element={<CliPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/security/pricing" element={<SecurityPricingPage />} />
           <Route path="/website-monitoring" element={<WebsiteMonitoring />} />
           <Route path="/api-monitoring" element={<ApiMonitoring />} />
           <Route path="/status-pages-feature" element={<StatusPagesFeature />} />
@@ -170,6 +177,11 @@ function AppRouter() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/api-keys" element={<ApiKeys />} />
             <Route path="/expired" element={<ExpiredState />} />
+            <Route path="/security" element={<SecurityDashboard />} />
+            <Route path="/security/onboard" element={<SecurityOnboarding />} />
+            <Route path="/security/targets/:targetId/configure" element={<ScanConfiguration />} />
+            <Route path="/security/scans/:scanId/report" element={<ExecutiveReport />} />
+            <Route path="/security/history" element={<ScanHistory />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />

@@ -68,6 +68,6 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') 
       throw new UnauthorizedException('Session expired. Please log in again.');
     }
 
-    return { id: user.id, email: user.email, sessionVersion: user.sessionVersion };
+    return { id: user.id, email: user.email, isAdmin, sessionVersion: user.sessionVersion };
   }
 }

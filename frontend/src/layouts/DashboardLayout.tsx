@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Shield,
   ShieldAlert,
   ShieldCheck,
   X,
@@ -77,6 +78,7 @@ export default function DashboardLayout() {
     { title: 'Changes', path: '/changes', icon: GitBranch },
     { title: 'Incidents', path: '/incidents', icon: ShieldAlert },
     { title: 'Status Pages', path: '/status-pages', icon: Globe },
+    { title: 'Security', path: '/security', icon: Shield },
     { title: 'API Keys', path: '/api-keys', icon: Key },
   ];
 
@@ -93,6 +95,9 @@ export default function DashboardLayout() {
     '/changes': 'Changes',
     '/incidents': 'Incidents',
     '/status-pages': 'Status Pages',
+    '/security': 'Security',
+    '/security/onboard': 'Add Target',
+    '/security/history': 'Scan History',
     '/billing': 'Billing',
     '/admin': 'Admin Console',
     '/api-keys': 'API Keys',
@@ -101,7 +106,11 @@ export default function DashboardLayout() {
 
   const activeTitle = location.pathname.startsWith('/monitors/')
     ? 'Monitor Details'
-    : pageTitles[location.pathname] || 'Dashboard';
+    : location.pathname.startsWith('/security/targets/')
+      ? 'Target Configuration'
+      : location.pathname.startsWith('/security/scans/')
+        ? 'Security Report'
+        : pageTitles[location.pathname] || 'Dashboard';
 
   if (!currentUser) {
     if (isUserLoading || isUserFetching) {
@@ -262,11 +271,13 @@ export default function DashboardLayout() {
                                   ? 'Response'
                                   : item.path === '/status-pages'
                                     ? 'Public comms'
-                                    : item.path === '/admin'
-                                      ? 'Support ops'
-                                    : item.path === '/billing'
-                                      ? 'Plan'
-                                      : 'Access'}
+                                    : item.path === '/security'
+                                      ? 'Threat intel'
+                                      : item.path === '/admin'
+                                        ? 'Support ops'
+                                      : item.path === '/billing'
+                                        ? 'Plan'
+                                        : 'Access'}
                         </p>
                       </div>
                     </div>

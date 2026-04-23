@@ -26,5 +26,6 @@ export interface TokenPair {
 export interface AuthenticatedUser {
   id: string;
   email: string;
+  isAdmin: boolean;
   sessionVersion?: number;
 }
