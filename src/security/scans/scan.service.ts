@@ -33,20 +33,22 @@ export class ScanService {
       throw new NotFoundException('Security target not found.');
     }
 
-    // 2. Check verification state
-    if (dto.tier === 'STANDARD' && target.verificationState === 'UNVERIFIED') {
-      throw new BadRequestException(
-        'Standard scan requires ownership confirmation. Please verify your target first.',
-      );
-    }
-    if (
-      (dto.tier === 'ADVANCED' || dto.tier === 'EMULATION' || dto.tier === 'CONTINUOUS_VALIDATION') &&
-      target.verificationState !== 'DNS_VERIFIED' &&
-      target.verificationState !== 'HTTP_VERIFIED'
-    ) {
-      throw new BadRequestException(
-        'Advanced, emulation, and continuous validation scans require DNS or HTTP technical verification.',
-      );
+    // 2. Check verification state (admins bypass all verification)
+    if (!isAdmin) {
+      if (dto.tier === 'STANDARD' && target.verificationState === 'UNVERIFIED') {
+        throw new BadRequestException(
+          'Standard scan requires ownership confirmation. Please verify your target first.',
+        );
+      }
+      if (
+        (dto.tier === 'ADVANCED' || dto.tier === 'EMULATION' || dto.tier === 'CONTINUOUS_VALIDATION') &&
+        target.verificationState !== 'DNS_VERIFIED' &&
+        target.verificationState !== 'HTTP_VERIFIED'
+      ) {
+        throw new BadRequestException(
+          'Advanced, emulation, and continuous validation scans require DNS or HTTP technical verification.',
+        );
+      }
     }
 
     // 3. Check entitlement
@@ -89,6 +91,7 @@ export class ScanService {
       enabledCategories: dto.enabledCategories,
       assetScope: dto.assetScope,
       authenticatedContext: dto.authenticatedContext as any,
+      isAdmin,
     });
 
     this.logger.log(`Scan ${scan.id} initiated for target ${targetId} (${dto.tier})`);

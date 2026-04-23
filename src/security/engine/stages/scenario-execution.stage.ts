@@ -18,6 +18,7 @@ import { IntelligentRecon } from '../modules/intelligent-recon.js';
 import { AdaptiveAttackEngine } from '../modules/adaptive-attack-engine.js';
 import { InjectionDeserEngine } from '../modules/injection-deser-engine.js';
 import { RaceConditionEngine } from '../modules/race-condition-engine.js';
+import { BreachExposureAuditor } from '../modules/breach-exposure-auditor.js';
 
 @Injectable()
 export class ScenarioExecutionStage {
@@ -42,6 +43,7 @@ export class ScenarioExecutionStage {
     private readonly adaptiveAttackEngine: AdaptiveAttackEngine,
     private readonly injectionDeserEngine: InjectionDeserEngine,
     private readonly raceConditionEngine: RaceConditionEngine,
+    private readonly breachExposureAuditor: BreachExposureAuditor,
   ) {}
 
   async execute(data: SecurityScanJobData): Promise<void> {
@@ -154,6 +156,15 @@ export class ScenarioExecutionStage {
       selectedFamilies.has('IDENTITY_AND_SECRETS')
     ) {
       await this.accountSecurityTester.execute(data);
+    }
+
+    // Breach exposure auditing — HIBP breach database checks, breach-rejection testing
+    if (
+      selectedSlugs.has('breach-exposure') ||
+      selectedSlugs.has('credential-audit') ||
+      selectedFamilies.has('IDENTITY_AND_SECRETS')
+    ) {
+      await this.breachExposureAuditor.execute(data);
     }
 
     // ═════════════════════════════════════════════════════════

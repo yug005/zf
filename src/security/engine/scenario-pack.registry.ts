@@ -681,6 +681,45 @@ const DEFAULT_PACKS: DefaultPack[] = [
     ],
   },
 
+  // ─── Breach Exposure Auditing ─────────────────────────────────────────
+  {
+    slug: 'breach-exposure',
+    name: 'Breach Exposure & Password Leak Detection',
+    family: 'IDENTITY_AND_SECRETS',
+    version: '1.0.0',
+    executionMode: 'ADVANCED',
+    safetyLevel: 'SAFE',
+    description: 'Checks passwords against the HaveIBeenPwned Pwned Passwords breach database using k-anonymity (privacy-safe). Reports which passwords are leaked, breach appearance counts, and tests whether the target application rejects breached passwords on registration and password-change flows. Uses NIST 800-63B recommended breach-password detection.',
+    supportedAssetKinds: ['API', 'WEB_APP', 'IDENTITY_TENANT'],
+    attckTechniques: ['T1110', 'T1110.001', 'T1110.004', 'T1589'],
+    steps: [
+      {
+        orderIndex: 1,
+        stepType: 'HTTP_REQUEST',
+        title: 'HIBP breach corpus scan: check 100 passwords against Pwned Passwords API (k-anonymity)',
+        verificationRule: { produces: ['observations'], attackVectorType: 'HIBP_BREACH_SCAN' },
+      },
+      {
+        orderIndex: 2,
+        stepType: 'HTTP_REQUEST',
+        title: 'Test target registration endpoint for breached password rejection',
+        verificationRule: { produces: ['observations', 'evidence'], attackVectorType: 'BREACH_REJECTION_REGISTER' },
+      },
+      {
+        orderIndex: 3,
+        stepType: 'AUTH_WORKFLOW',
+        title: 'Test target password-change endpoint for breached password rejection',
+        verificationRule: { produces: ['observations', 'evidence'], attackVectorType: 'BREACH_REJECTION_CHANGE' },
+      },
+      {
+        orderIndex: 4,
+        stepType: 'HTTP_REQUEST',
+        title: 'Cross-reference default credentials against breach databases',
+        verificationRule: { produces: ['observations'], attackVectorType: 'DEFAULT_CRED_BREACH_XREF' },
+      },
+    ],
+  },
+
   // ─── User Enumeration Detection ──────────────────────────────────────
   {
     slug: 'user-enumeration',

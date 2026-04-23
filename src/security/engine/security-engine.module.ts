@@ -32,6 +32,7 @@ import { BusinessLogicTester } from './modules/business-logic-tester.js';
 import { CredentialAuditor } from './modules/credential-auditor.js';
 import { UserEnumerationDetector } from './modules/user-enumeration-detector.js';
 import { AccountSecurityTester } from './modules/account-security-tester.js';
+import { BreachExposureAuditor } from './modules/breach-exposure-auditor.js';
 // ─── Advanced Attack Framework Modules ────────────────────────────
 import { IntelligentRecon } from './modules/intelligent-recon.js';
 import { AdaptiveAttackEngine } from './modules/adaptive-attack-engine.js';
@@ -105,6 +106,7 @@ import { ContinuousLearningEngine } from './systems/continuous-learning-engine.j
     CredentialAuditor,
     UserEnumerationDetector,
     AccountSecurityTester,
+    BreachExposureAuditor,
     // ─── Advanced Attack Framework ────────────────────────────
     IntelligentRecon,
     AdaptiveAttackEngine,

@@ -17,6 +17,12 @@ export class VerificationCheckStage {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(data: SecurityScanJobData): Promise<void> {
+    // Admin users bypass all domain verification requirements
+    if (data.isAdmin) {
+      this.logger.log(`Admin bypass: skipping verification check for scan ${data.scanId}`);
+      return;
+    }
+
     const target = await this.prisma.securityTarget.findUnique({
       where: { id: data.targetId },
       select: { verificationState: true },

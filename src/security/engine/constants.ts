@@ -163,6 +163,8 @@ export interface SecurityScanJobData {
   authenticatedContext?: AuthenticatedContext;
   scanMode?: ScanMode;
   deepAnalysisEnabled?: boolean;
+  /** Admin users bypass domain verification requirements */
+  isAdmin?: boolean;
 }
 
 // ─── Auth Header Presets ───────────────────────────────────────────
