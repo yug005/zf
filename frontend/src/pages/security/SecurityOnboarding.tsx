@@ -43,7 +43,7 @@ export default function SecurityOnboarding() {
   const [isVerified, setIsVerified] = useState(false);
 
   // ── Queries
-  const { data: entitlement } = useQuery({
+  const { data: entitlement, isLoading: isEntitlementLoading } = useQuery({
     queryKey: ['security-entitlement'],
     queryFn: securityApi.getEntitlement,
   });
@@ -114,7 +114,10 @@ export default function SecurityOnboarding() {
     setTimeout(() => setStep('scan'), 1500);
   }, [queryClient]);
 
-  const canScan = entitlement && entitlement.freeScanRemaining > 0;
+  const showFreeQuotaWarning =
+    !isEntitlementLoading &&
+    entitlement?.plan === 'FREE' &&
+    entitlement.freeScanRemaining <= 0;
   const currentMeta = STEP_META[step];
 
   return (
@@ -220,7 +223,7 @@ export default function SecurityOnboarding() {
               />
             </div>
 
-            {!canScan && (
+            {showFreeQuotaWarning && (
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-xs text-amber-300">
                 <AlertTriangle className="inline h-3.5 w-3.5 mr-1" />
                 Free scan quota exhausted. Upgrade to a paid Security plan.

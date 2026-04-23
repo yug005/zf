@@ -1,60 +1,123 @@
-import { Suspense, lazy, useCallback, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { ThemeProvider } from './components/ThemeProvider';
 import { PageMeta } from './components/PageMeta';
 import SystemBootLoader from './components/SystemBootLoader';
 import { AUTH_HINT_STORAGE_KEY, currentUserQueryOptions } from './services/current-user';
 
-const DashboardLayout = lazy(() => import('./layouts/DashboardLayout'));
-const AuthLayout = lazy(() => import('./layouts/AuthLayout'));
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const Terms = lazy(() => import('./pages/Legal').then((module) => ({ default: module.Terms })));
-const Privacy = lazy(() => import('./pages/Legal').then((module) => ({ default: module.Privacy })));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
-const AuthSuccess = lazy(() => import('./pages/AuthSuccess'));
-const HowToUse = lazy(() => import('./pages/HowToUse'));
-const CliPage = lazy(() => import('./pages/CliPage'));
-const PricingPage = lazy(() => import('./pages/PricingPage'));
-const SecurityPricingPage = lazy(() => import('./pages/security/SecurityPricingPage'));
-const WebsiteMonitoring = lazy(() => import('./pages/WebsiteMonitoring'));
-const ApiMonitoring = lazy(() => import('./pages/ApiMonitoring'));
-const StatusPagesFeature = lazy(() => import('./pages/StatusPagesFeature'));
-const SslMonitoring = lazy(() => import('./pages/SslMonitoring'));
-const ApiMonitoringTools = lazy(() => import('./pages/ApiMonitoringTools'));
-const VsUptimeRobot = lazy(() => import('./pages/VsUptimeRobot'));
-const VsGrafana = lazy(() => import('./pages/VsGrafana'));
-const VsBetterStack = lazy(() => import('./pages/VsBetterStack'));
-const VsPingdom = lazy(() => import('./pages/VsPingdom'));
-const Dashboard = lazy(() => import('./pages/dashboard'));
-const Changes = lazy(() => import('./pages/Changes'));
-const Incidents = lazy(() => import('./pages/Incidents'));
-const MonitorsList = lazy(() => import('./pages/Monitors'));
-const MonitorDetail = lazy(() => import('./pages/MonitorDetail'));
-const StatusPages = lazy(() => import('./pages/StatusPages'));
-const PublicStatusPage = lazy(() => import('./pages/PublicStatusPage'));
-const Billing = lazy(() => import('./pages/Billing'));
-const Admin = lazy(() => import('./pages/Admin'));
-const ApiKeys = lazy(() => import('./pages/ApiKeys'));
-const ExpiredState = lazy(() => import('./pages/ExpiredState'));
-const SecurityDashboard = lazy(() => import('./pages/security/SecurityDashboard'));
-const SecurityOnboarding = lazy(() => import('./pages/security/SecurityOnboarding'));
-const ScanConfiguration = lazy(() => import('./pages/security/ScanConfiguration'));
-const ExecutiveReport = lazy(() => import('./pages/security/ExecutiveReport'));
-const ScanHistory = lazy(() => import('./pages/security/ScanHistory'));
+const loadDashboardLayout = () => import('./layouts/DashboardLayout');
+const loadAuthLayout = () => import('./layouts/AuthLayout');
+const loadLandingPage = () => import('./pages/LandingPage');
+const loadLegal = () => import('./pages/Legal');
+const loadLogin = () => import('./pages/Login');
+const loadRegister = () => import('./pages/Register');
+const loadForgotPassword = () => import('./pages/ForgotPassword');
+const loadResetPassword = () => import('./pages/ResetPassword');
+const loadVerifyEmail = () => import('./pages/VerifyEmail');
+const loadAuthSuccess = () => import('./pages/AuthSuccess');
+const loadHowToUse = () => import('./pages/HowToUse');
+const loadCliPage = () => import('./pages/CliPage');
+const loadPricingPage = () => import('./pages/PricingPage');
+const loadSecurityPricingPage = () => import('./pages/security/SecurityPricingPage');
+const loadWebsiteMonitoring = () => import('./pages/WebsiteMonitoring');
+const loadApiMonitoring = () => import('./pages/ApiMonitoring');
+const loadStatusPagesFeature = () => import('./pages/StatusPagesFeature');
+const loadSslMonitoring = () => import('./pages/SslMonitoring');
+const loadApiMonitoringTools = () => import('./pages/ApiMonitoringTools');
+const loadVsUptimeRobot = () => import('./pages/VsUptimeRobot');
+const loadVsGrafana = () => import('./pages/VsGrafana');
+const loadVsBetterStack = () => import('./pages/VsBetterStack');
+const loadVsPingdom = () => import('./pages/VsPingdom');
+const loadDashboard = () => import('./pages/dashboard');
+const loadChanges = () => import('./pages/Changes');
+const loadIncidents = () => import('./pages/Incidents');
+const loadMonitorsList = () => import('./pages/Monitors');
+const loadMonitorDetail = () => import('./pages/MonitorDetail');
+const loadStatusPages = () => import('./pages/StatusPages');
+const loadPublicStatusPage = () => import('./pages/PublicStatusPage');
+const loadBilling = () => import('./pages/Billing');
+const loadAdmin = () => import('./pages/Admin');
+const loadApiKeys = () => import('./pages/ApiKeys');
+const loadExpiredState = () => import('./pages/ExpiredState');
+const loadSecurityDashboard = () => import('./pages/security/SecurityDashboard');
+const loadSecurityOnboarding = () => import('./pages/security/SecurityOnboarding');
+const loadScanConfiguration = () => import('./pages/security/ScanConfiguration');
+const loadExecutiveReport = () => import('./pages/security/ExecutiveReport');
+const loadScanHistory = () => import('./pages/security/ScanHistory');
+
+const DashboardLayout = lazy(loadDashboardLayout);
+const AuthLayout = lazy(loadAuthLayout);
+const LandingPage = lazy(loadLandingPage);
+const Terms = lazy(() => loadLegal().then((module) => ({ default: module.Terms })));
+const Privacy = lazy(() => loadLegal().then((module) => ({ default: module.Privacy })));
+const Login = lazy(loadLogin);
+const Register = lazy(loadRegister);
+const ForgotPassword = lazy(loadForgotPassword);
+const ResetPassword = lazy(loadResetPassword);
+const VerifyEmail = lazy(loadVerifyEmail);
+const AuthSuccess = lazy(loadAuthSuccess);
+const HowToUse = lazy(loadHowToUse);
+const CliPage = lazy(loadCliPage);
+const PricingPage = lazy(loadPricingPage);
+const SecurityPricingPage = lazy(loadSecurityPricingPage);
+const WebsiteMonitoring = lazy(loadWebsiteMonitoring);
+const ApiMonitoring = lazy(loadApiMonitoring);
+const StatusPagesFeature = lazy(loadStatusPagesFeature);
+const SslMonitoring = lazy(loadSslMonitoring);
+const ApiMonitoringTools = lazy(loadApiMonitoringTools);
+const VsUptimeRobot = lazy(loadVsUptimeRobot);
+const VsGrafana = lazy(loadVsGrafana);
+const VsBetterStack = lazy(loadVsBetterStack);
+const VsPingdom = lazy(loadVsPingdom);
+const Dashboard = lazy(loadDashboard);
+const Changes = lazy(loadChanges);
+const Incidents = lazy(loadIncidents);
+const MonitorsList = lazy(loadMonitorsList);
+const MonitorDetail = lazy(loadMonitorDetail);
+const StatusPages = lazy(loadStatusPages);
+const PublicStatusPage = lazy(loadPublicStatusPage);
+const Billing = lazy(loadBilling);
+const Admin = lazy(loadAdmin);
+const ApiKeys = lazy(loadApiKeys);
+const ExpiredState = lazy(loadExpiredState);
+const SecurityDashboard = lazy(loadSecurityDashboard);
+const SecurityOnboarding = lazy(loadSecurityOnboarding);
+const ScanConfiguration = lazy(loadScanConfiguration);
+const ExecutiveReport = lazy(loadExecutiveReport);
+const ScanHistory = lazy(loadScanHistory);
 
 const INITIAL_BOOT_STORAGE_KEY = 'zf-initial-boot-complete-v2';
 const FIRST_BOOT_DURATION_MS = 2400;
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 1, refetchOnWindowFocus: false },
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      gcTime: 600_000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
   },
 });
+
+function preloadCommonRoutes() {
+  void loadDashboardLayout();
+  void loadAuthLayout();
+  void loadDashboard();
+  void loadMonitorsList();
+  void loadChanges();
+  void loadIncidents();
+  void loadStatusPages();
+  void loadBilling();
+  void loadApiKeys();
+  void loadSecurityDashboard();
+  void loadSecurityOnboarding();
+  void loadScanConfiguration();
+  void loadScanHistory();
+}
 
 function RouteFallback() {
   return (
@@ -116,18 +179,18 @@ function NotFoundPage() {
           Try the dashboard if you are signed in, or head back to the Zer0Friction homepage.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <a
-            href="/"
+          <Link
+            to="/"
             className="rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90"
           >
             Go home
-          </a>
-          <a
-            href="/dashboard"
+          </Link>
+          <Link
+            to="/dashboard"
             className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.05]"
           >
             Open dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>
@@ -207,6 +270,23 @@ export default function App() {
 
     setHasCompletedInitialBoot(true);
   }, []);
+
+  useEffect(() => {
+    if (!hasCompletedInitialBoot || typeof window === 'undefined') {
+      return;
+    }
+
+    const preload = () => preloadCommonRoutes();
+    const idleCallback = window.requestIdleCallback;
+
+    if (typeof idleCallback === 'function') {
+      const handle = idleCallback(preload, { timeout: 1500 });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+
+    const timeout = window.setTimeout(preload, 800);
+    return () => window.clearTimeout(timeout);
+  }, [hasCompletedInitialBoot]);
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
