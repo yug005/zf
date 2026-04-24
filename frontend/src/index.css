@@ -3,34 +3,121 @@
 @tailwind utilities;
 
 @layer base {
+  /* ─── Theme Transition ─────────────────────────── */
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: background-color 0.4s ease,
+                color 0.4s ease,
+                border-color 0.4s ease,
+                box-shadow 0.4s ease,
+                fill 0.4s ease,
+                stroke 0.4s ease !important;
+  }
+
+  /* ─── CSS Custom Properties: LIGHT (default) ───── */
+  :root {
+    --color-surface-base: #f8fafc;
+    --color-surface-primary: #ffffff;
+    --color-surface-secondary: #f1f5f9;
+    --color-surface-elevated: #ffffff;
+    --color-surface-overlay: rgba(255, 255, 255, 0.92);
+    --color-surface-glass: rgba(255, 255, 255, 0.75);
+
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #475569;
+    --color-text-tertiary: #94a3b8;
+    --color-text-inverse: #ffffff;
+
+    --color-border-primary: rgba(15, 23, 42, 0.08);
+    --color-border-secondary: rgba(15, 23, 42, 0.05);
+
+    --color-glow-cyan: rgba(34, 211, 238, 0.06);
+    --color-glow-emerald: rgba(16, 185, 129, 0.06);
+
+    --shadow-shell: 0 1px 3px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    --shadow-elevated: 0 4px 24px rgba(0, 0, 0, 0.05);
+  }
+
+  /* ─── CSS Custom Properties: DARK ──────────────── */
+  .dark {
+    --color-surface-base: #040611;
+    --color-surface-primary: #0a0f1c;
+    --color-surface-secondary: #0f1424;
+    --color-surface-elevated: #111827;
+    --color-surface-overlay: rgba(4, 6, 17, 0.92);
+    --color-surface-glass: rgba(255, 255, 255, 0.04);
+
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #94a3b8;
+    --color-text-tertiary: #64748b;
+    --color-text-inverse: #0f172a;
+
+    --color-border-primary: rgba(255, 255, 255, 0.1);
+    --color-border-secondary: rgba(255, 255, 255, 0.06);
+
+    --color-glow-cyan: rgba(34, 211, 238, 0.12);
+    --color-glow-emerald: rgba(16, 185, 129, 0.12);
+
+    --shadow-shell: 0 24px 90px rgba(0, 0, 0, 0.38);
+    --shadow-elevated: 0 16px 64px rgba(0, 0, 0, 0.3);
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 antialiased;
+    background-color: var(--color-surface-base);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer components {
+  /* ─── Shell Surface (glass card for sidebar/header) ─── */
+  .shell-surface {
+    border: 1px solid var(--color-border-primary);
+    background: linear-gradient(
+      180deg,
+      var(--color-surface-glass),
+      rgba(255, 255, 255, 0.02)
+    );
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: var(--shadow-shell);
+  }
+
+  .light .shell-surface {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.95),
+      rgba(255, 255, 255, 0.88)
+    );
+  }
+
+  /* ─── Auth Inputs ─── */
   .auth-input {
-    @apply block w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 caret-slate-900 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all;
+    @apply block w-full appearance-none rounded-xl border px-4 py-3 shadow-sm transition-all;
+    border-color: var(--color-border-primary);
+    background: var(--color-surface-primary);
+    color: var(--color-text-primary);
+    caret-color: var(--color-text-primary);
+  }
+
+  .auth-input::placeholder {
+    color: var(--color-text-tertiary);
   }
 
   .auth-input:hover {
-    @apply border-slate-400;
+    border-color: var(--color-text-tertiary);
   }
 
-  .dark .auth-input {
-    @apply border-slate-700 bg-slate-900 text-slate-100 caret-slate-100 placeholder:text-slate-400;
-  }
-
-  .dark .auth-input:hover {
-    @apply border-slate-600;
+  .auth-input:focus {
+    @apply border-primary-500 outline-none ring-2 ring-primary-500/20;
   }
 
   .auth-input:-webkit-autofill,
   .auth-input:-webkit-autofill:hover,
   .auth-input:-webkit-autofill:focus {
-    -webkit-text-fill-color: rgb(15 23 42);
-    -webkit-box-shadow: 0 0 0 1000px rgb(255 255 255) inset;
-    caret-color: rgb(15 23 42);
     transition: background-color 9999s ease-in-out 0s;
   }
 
@@ -42,7 +129,131 @@
     caret-color: rgb(241 245 249);
   }
 
+  .light .auth-input:-webkit-autofill,
+  .light .auth-input:-webkit-autofill:hover,
+  .light .auth-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(15 23 42);
+    -webkit-box-shadow: 0 0 0 1000px rgb(255 255 255) inset;
+    caret-color: rgb(15 23 42);
+  }
+
   .admin-input {
-    @apply w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400/40;
+    @apply w-full rounded-2xl px-4 py-3 text-sm outline-none transition;
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-surface-primary);
+    color: var(--color-text-primary);
+  }
+
+  .admin-input::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  .admin-input:focus {
+    border-color: rgba(34, 211, 238, 0.4);
   }
 }
+
+/* ─── Light Mode Override Layer ───────────────────────── 
+   Catches hardcoded dark-only patterns in pages that 
+   haven't been individually updated yet. These rules 
+   only apply in .light (i.e., NOT dark) mode.
+   ───────────────────────────────────────────────────── */
+@layer utilities {
+  /* In light mode, rewrite text-white to dark text */
+  html:not(.dark) .text-white {
+    color: var(--color-text-primary) !important;
+  }
+
+  /* In light mode, rewrite text-white/opacity variants */
+  html:not(.dark) [class*="text-white/90"],
+  html:not(.dark) [class*="text-white/80"] {
+    color: var(--color-text-primary) !important;
+  }
+  html:not(.dark) [class*="text-white/70"],
+  html:not(.dark) [class*="text-white/60"] {
+    color: var(--color-text-secondary) !important;
+  }
+  html:not(.dark) [class*="text-white/50"],
+  html:not(.dark) [class*="text-white/40"] {
+    color: var(--color-text-tertiary) !important;
+  }
+  html:not(.dark) [class*="text-white/30"],
+  html:not(.dark) [class*="text-white/20"] {
+    color: #b0b8c9 !important;
+  }
+
+  /* In light mode, rewrite slate text colors */
+  html:not(.dark) .text-slate-100,
+  html:not(.dark) .text-slate-200 {
+    color: var(--color-text-primary) !important;
+  }
+  html:not(.dark) .text-slate-300 {
+    color: var(--color-text-secondary) !important;
+  }
+  html:not(.dark) .text-slate-400,
+  html:not(.dark) .text-slate-500 {
+    color: var(--color-text-tertiary) !important;
+  }
+
+  /* In light mode, rewrite hardcoded dark backgrounds */
+  html:not(.dark) [class*="bg-[#04"],
+  html:not(.dark) [class*="bg-[#05"],
+  html:not(.dark) [class*="bg-[#07"],
+  html:not(.dark) [class*="bg-[#08"],
+  html:not(.dark) [class*="bg-[#0a"],
+  html:not(.dark) [class*="bg-[#0c"],
+  html:not(.dark) [class*="bg-[#0f"],
+  html:not(.dark) .bg-void-950 {
+    background-color: var(--color-surface-base) !important;
+  }
+
+  /* In light mode, rewrite semi-transparent white surfaces */
+  html:not(.dark) [class*="bg-white/[0.0"] {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* In light mode, rewrite semi-transparent white borders */
+  html:not(.dark) [class*="border-white/"] {
+    border-color: var(--color-border-primary) !important;
+  }
+
+  /* In light mode, rewrite bg-slate-950 surface */
+  html:not(.dark) .bg-slate-950 {
+    background-color: var(--color-surface-primary) !important;
+  }
+
+  /* In light mode, give slate-950/dark bg inputs a light bg */
+  html:not(.dark) [class*="bg-slate-950/"] {
+    background-color: var(--color-surface-primary) !important;
+    color: var(--color-text-primary) !important;
+  }
+
+  /* In light mode, override backdrop text for readability */
+  html:not(.dark) [class*="text-cyan-300"] {
+    color: #0891b2 !important; /* cyan-600 */
+  }
+
+  /* Landing page: grid SVG strokes should be dark in light mode */
+  html:not(.dark) svg pattern path[stroke="white"] {
+    stroke: #94a3b8 !important;
+  }
+
+  /* ── Gradient button protection ────────────────────── */
+  /* Buttons/links with aurora gradient backgrounds must keep dark text */
+  html:not(.dark) .text-void-950 {
+    color: #080b14 !important;
+  }
+
+  /* Ensure gradient buttons keep appropriate text */
+  html:not(.dark) button[class*="from-emerald"],
+  html:not(.dark) a[class*="from-cyan"],
+  html:not(.dark) [class*="from-aurora-teal"][class*="to-aurora-emerald"] {
+    color: #080b14 !important;
+  }
+
+  /* Landing page bottom fade — transparent to surface-base */
+  html:not(.dark) [class*="from-void-950"] {
+    --tw-gradient-from: var(--color-surface-base) !important;
+  }
+}
+

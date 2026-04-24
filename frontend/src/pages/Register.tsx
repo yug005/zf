@@ -78,17 +78,17 @@ export default function Register() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
           <Mail className="h-8 w-8 text-emerald-400" />
         </div>
-        <h2 className="text-2xl font-extrabold tracking-tight text-white">
+        <h2 className="text-2xl font-extrabold tracking-tight mb-2">
           Inbox incoming
         </h2>
-        <p className="text-sm leading-relaxed text-slate-400">
+        <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
           Secure activation link sent to{' '}
-          <span className="font-semibold text-white">{email}</span>.
+          <span className="font-semibold">{email}</span>.
           Verify your email to initialize your workspace.
         </p>
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 text-left shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">What to do next</p>
-          <p className="mt-2 text-sm leading-6 text-slate-300">
+        <div className="rounded-2xl border p-5 text-left shadow-sm" style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">What to do next</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--color-text-secondary)]">
             Open the email, click the secure link, and sign in. If it does not
             show up in a minute, check spam or request a fresh link.
           </p>
@@ -96,7 +96,8 @@ export default function Register() {
             type="button"
             onClick={handleResendVerification}
             disabled={isResending}
-            className="mt-4 inline-flex items-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-4 inline-flex items-center rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)', color: 'var(--color-text-secondary)' }}
           >
             {isResending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-400" />
@@ -112,7 +113,8 @@ export default function Register() {
         <div className="pt-2">
           <Link
             to="/login"
-            className="inline-flex items-center rounded-xl bg-white/[0.05] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-white/[0.1] active:scale-[0.98] group"
+            className="inline-flex items-center rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition-all active:scale-[0.98] group"
+            style={{ background: 'var(--color-surface-glass)', color: 'var(--color-text-primary)' }}
           >
             Return to Sign In
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -133,10 +135,10 @@ export default function Register() {
         <div className="flex justify-center">
           <BrandLogo compact />
         </div>
-        <h2 className="mt-6 text-2xl font-extrabold tracking-tight text-white mb-2">
+        <h2 className="mt-6 text-2xl font-extrabold tracking-tight mb-2">
           Initialize workspace
         </h2>
-        <p className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-500">
+        <p className="mt-2 text-xs font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
           Join the observability platform
         </p>
       </div>
@@ -147,7 +149,7 @@ export default function Register() {
           onClick={() => {
             window.location.href = getOAuthUrl('google');
           }}
-          className="flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
+          className="flex items-center justify-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24">
             <path
@@ -175,19 +177,19 @@ export default function Register() {
           onClick={() => {
             window.location.href = getOAuthUrl('github');
           }}
-          className="flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
+          className="flex items-center justify-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
         >
-          <Github className="h-4 w-4 text-slate-300" />
+          <Github className="h-4 w-4 text-slate-600 dark:text-slate-300" />
           GitHub
         </button>
       </div>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/[0.08]"></span>
+          <span className="w-full border-t" style={{ borderColor: 'var(--color-border-primary)' }}></span>
         </div>
         <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-          <span className="bg-[#0c121e] px-4 text-slate-500">
+          <span className="px-4 text-[var(--color-text-tertiary)]" style={{ background: 'var(--color-surface-elevated)' }}>
             Or continue with email
           </span>
         </div>
@@ -195,14 +197,14 @@ export default function Register() {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
-          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-400 animate-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-500 dark:text-rose-400 animate-in slide-in-from-top-2 duration-200">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{error}</span>
           </div>
         ) : null}
 
         <div className="space-y-1.5">
-          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
             Full Name
           </label>
           <input
@@ -210,13 +212,13 @@ export default function Register() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
+            className="w-full rounded-xl border px-4 py-3 text-sm transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none border-slate-200 bg-white text-slate-900 placeholder-slate-400 dark:border-white/[0.1] dark:bg-[#080c14]/50 dark:text-white dark:placeholder-slate-600"
             placeholder="Your name"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
             Email Address
           </label>
           <input
@@ -224,13 +226,13 @@ export default function Register() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
+            className="w-full rounded-xl border px-4 py-3 text-sm transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none border-slate-200 bg-white text-slate-900 placeholder-slate-400 dark:border-white/[0.1] dark:bg-[#080c14]/50 dark:text-white dark:placeholder-slate-600"
             placeholder="you@company.com"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
             Password
           </label>
           <div className="relative">
@@ -246,12 +248,12 @@ export default function Register() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 hover:text-slate-300 transition-colors"
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          <p className="ml-1 mt-1.5 text-[10px] text-slate-500">
+          <p className="ml-1 mt-1.5 text-[10px] text-[var(--color-text-tertiary)]">
             Minimum 8 characters with at least one letter and one number.
           </p>
         </div>
@@ -265,7 +267,7 @@ export default function Register() {
         </button>
 
         <div className="pt-4 text-center">
-          <p className="text-[11px] font-medium text-slate-500">
+          <p className="text-[11px] font-medium text-[var(--color-text-tertiary)]">
             Already have an account?{' '}
             <Link to="/login" className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
               Sign in here

@@ -105,7 +105,7 @@ const websiteSchema = {
 /* ─── Main Landing Page ──────────────────────────────── */
 export default function LandingPage() {
   return (
-    <div className="dark min-h-screen bg-void-950 text-white font-sans overflow-x-hidden selection:bg-aurora-teal/30 selection:text-white">
+    <div className="min-h-screen bg-void-950 dark:bg-void-950 font-sans overflow-x-hidden selection:bg-aurora-teal/30">
       <PageMeta
         title="Zer0Friction | Uptime Monitoring for Websites, APIs, SSL, DNS, and Status Pages"
         description="Monitor websites, APIs, SSL, DNS, incidents, status pages, and deploy health with Zer0Friction's focused uptime platform."

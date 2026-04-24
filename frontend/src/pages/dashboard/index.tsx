@@ -39,9 +39,10 @@ function ModeToggleSwitch({ mode, onToggle }: { mode: DashboardMode; onToggle: (
   return (
     <button
       onClick={onToggle}
-      className="group relative flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-2.5 transition-all hover:bg-white/[0.06] hover:border-white/[0.12]"
+      className="group relative flex items-center gap-3 rounded-2xl border px-4 py-2.5 transition-all hover:opacity-90"
+      style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}
     >
-      <div className="relative h-5 w-10 rounded-full bg-white/[0.06]">
+      <div className="relative h-5 w-10 rounded-full bg-slate-200 dark:bg-white/[0.06]">
         <motion.div
           className="absolute top-0.5 h-4 w-4 rounded-full"
           animate={{
@@ -53,8 +54,8 @@ function ModeToggleSwitch({ mode, onToggle }: { mode: DashboardMode; onToggle: (
         />
       </div>
       <div className="flex items-center gap-2">
-        {mode === 'compact' ? <Minimize2 className="h-3.5 w-3.5 text-slate-400" /> : <Maximize2 className="h-3.5 w-3.5 text-emerald-400" />}
-        <span className="text-xs font-bold uppercase tracking-[0.15em] text-slate-400">
+        {mode === 'compact' ? <Minimize2 className="h-3.5 w-3.5 text-[var(--color-text-tertiary)]" /> : <Maximize2 className="h-3.5 w-3.5 text-emerald-400" />}
+        <span className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--color-text-tertiary)]">
           {mode === 'compact' ? 'Compact' : 'Analytical'}
         </span>
       </div>
@@ -65,15 +66,15 @@ function ModeToggleSwitch({ mode, onToggle }: { mode: DashboardMode; onToggle: (
 function DashboardSkeleton() {
   return (
     <div className="animate-pulse space-y-5">
-      <div className="h-28 rounded-2xl bg-white/[0.03] border border-white/[0.04]" />
+      <div className="h-28 rounded-2xl border" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }} />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-2xl bg-white/[0.03] border border-white/[0.04]" />
+          <div key={i} className="h-24 rounded-2xl border" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }} />
         ))}
       </div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
-        <div className="h-80 rounded-2xl bg-white/[0.03] border border-white/[0.04]" />
-        <div className="h-80 rounded-2xl bg-white/[0.03] border border-white/[0.04]" />
+        <div className="h-80 rounded-2xl border" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }} />
+        <div className="h-80 rounded-2xl border" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }} />
       </div>
     </div>
   );
@@ -107,8 +108,8 @@ export default function Dashboard() {
   if (me) {
     return (
       <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-8 text-center">
-        <h3 className="text-lg font-bold text-rose-400">Dashboard unavailable</h3>
-        <p className="mt-2 text-sm text-slate-400">Could not load monitoring data from the API.</p>
+        <h3 className="text-lg font-bold text-rose-500 dark:text-rose-400">Dashboard unavailable</h3>
+        <p className="mt-2 text-sm text-[var(--color-text-tertiary)]">Could not load monitoring data from the API.</p>
       </div>
     );
   }
@@ -118,28 +119,29 @@ export default function Dashboard() {
       {/* Command Header */}
       <motion.section
         layout
-        className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm"
+        className="relative overflow-hidden rounded-2xl border backdrop-blur-sm"
+        style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}
       >
         {/* Ambient glow */}
         <div className="absolute -inset-[200%] animate-[spin_60s_linear_infinite] bg-[conic-gradient(from_90deg,transparent_0%,rgba(16,185,129,0.04)_25%,transparent_50%)] blur-3xl pointer-events-none" />
-        <div className="absolute inset-0 bg-[#080c14]/40 pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'var(--color-surface-overlay)', opacity: 0.4 }} />
 
         <div className="relative z-10 p-6 lg:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                  <LayoutDashboard className="h-4 w-4 text-emerald-400" />
+                  <LayoutDashboard className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400/70">Live Dashboard</span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400/70">Live Dashboard</span>
                 </div>
               </div>
-              <h1 className="text-2xl font-extrabold text-white lg:text-3xl">
+              <h1 className="text-2xl font-extrabold lg:text-3xl">
                 {mode === 'compact' ? 'Operational Overview' : 'Control Room'}
               </h1>
-              <p className="mt-2 text-sm text-slate-500 max-w-lg">
+              <p className="mt-2 text-sm text-[var(--color-text-tertiary)] max-w-lg">
                 {safeMonitors.length === 0
                   ? 'Create your first monitor to begin tracking uptime, latency, and incidents.'
                   : mode === 'compact'
@@ -158,7 +160,7 @@ export default function Dashboard() {
                   { label: 'Incidents', value: insights.activeIncidents.length, color: insights.activeIncidents.length > 0 ? 'text-amber-400' : 'text-slate-500' },
                 ].map((s) => (
                   <div key={s.label} className="text-right">
-                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-slate-600">{s.label}</p>
+                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">{s.label}</p>
                     <p className={`text-sm font-extrabold ${s.color}`}>{s.value}</p>
                   </div>
                 ))}

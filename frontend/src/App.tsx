@@ -121,9 +121,9 @@ function preloadCommonRoutes() {
 
 function RouteFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#040611] px-6 text-slate-300">
+    <div className="flex min-h-screen items-center justify-center px-6" style={{ background: 'var(--color-surface-base)', color: 'var(--color-text-secondary)' }}>
       <div className="text-center">
-        <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+        <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-500" />
         <p className="mt-4 text-sm">Loading workspace...</p>
       </div>
     </div>
@@ -148,9 +148,9 @@ function RootRoute() {
 
   if (isLoading || isFetching) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#040611] px-6 text-slate-300">
+      <div className="flex min-h-screen items-center justify-center px-6" style={{ background: 'var(--color-surface-base)', color: 'var(--color-text-secondary)' }}>
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-500" />
           <p className="mt-4 text-sm">Checking session...</p>
         </div>
       </div>
@@ -166,16 +166,18 @@ function RootRoute() {
 
 function NotFoundPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#050816] px-6 text-slate-100">
+    <div className="flex min-h-screen items-center justify-center px-6" style={{ background: 'var(--color-surface-base)', color: 'var(--color-text-primary)' }}>
       <PageMeta
         title="Page Not Found | Zer0Friction"
         description="The page you requested could not be found on Zer0Friction."
         noIndex
       />
-      <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-white/[0.04] p-10 text-center shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-300/70">404</p>
-        <h1 className="mt-4 text-3xl font-semibold text-white">This page does not exist</h1>
-        <p className="mt-3 text-sm text-slate-400">
+      <div className="w-full max-w-lg rounded-[32px] border p-10 text-center backdrop-blur-xl"
+        style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)', boxShadow: 'var(--shadow-shell)' }}
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-600 dark:text-cyan-300/70">404</p>
+        <h1 className="mt-4 text-3xl font-semibold">This page does not exist</h1>
+        <p className="mt-3 text-sm text-[var(--color-text-tertiary)]">
           Try the dashboard if you are signed in, or head back to the Zer0Friction homepage.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
@@ -187,7 +189,8 @@ function NotFoundPage() {
           </Link>
           <Link
             to="/dashboard"
-            className="rounded-2xl border border-white/10 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.05]"
+            className="rounded-2xl border px-5 py-3 text-sm font-semibold transition"
+            style={{ borderColor: 'var(--color-border-primary)' }}
           >
             Open dashboard
           </Link>

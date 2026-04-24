@@ -11,13 +11,18 @@ function joinClassNames(...values: Array<string | undefined>) {
 export function BrandLogo({
   compact = false,
   className,
-  theme = 'light',
+  theme,
 }: BrandLogoProps) {
-  const wordmarkClass = theme === 'dark' ? 'text-white' : 'text-slate-950';
+  // If no explicit theme passed, auto-detect from CSS variable
+  const wordmarkClass = theme === 'dark'
+    ? 'text-white'
+    : theme === 'light'
+      ? 'text-slate-950'
+      : 'text-slate-950 dark:text-white';
 
   return (
     <div className={joinClassNames('inline-flex items-center gap-3', className)}>
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 shadow-[0_10px_30px_rgba(15,23,42,0.18)]">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 dark:bg-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.18)]">
         <svg
           viewBox="0 0 40 40"
           className="h-7 w-7"

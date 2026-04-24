@@ -192,7 +192,7 @@ export default function HeroSection() {
     <section
       ref={containerRef}
       id="hero-section"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-void-950"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
       {/* Parallax background layer */}
       <motion.div style={{ x: bgX, y: bgY }} className="absolute inset-0">
@@ -292,7 +292,7 @@ export default function HeroSection() {
       </div>
 
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-void-950 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[var(--color-surface-base)] to-transparent pointer-events-none" />
     </section>
   );
 }

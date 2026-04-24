@@ -5,9 +5,12 @@ import { Loader2, AlertCircle, Eye, EyeOff, Github, Mail } from 'lucide-react';
 import { axiosPublic, getOAuthUrl } from '../services/api';
 import { PageMeta } from '../components/PageMeta';
 import { BrandLogo } from '../components/BrandLogo';
+import { useTheme } from '../components/ThemeProvider';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -55,6 +58,12 @@ export default function Login() {
     }
   };
 
+  const inputClassName = `w-full rounded-xl border px-4 py-3 text-sm transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none ${
+    isDark
+      ? 'border-white/[0.1] bg-[#080c14]/50 text-white placeholder-slate-600'
+      : 'border-slate-200 bg-white text-slate-900 placeholder-slate-400'
+  }`;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <PageMeta
@@ -66,10 +75,10 @@ export default function Login() {
         <div className="mb-6 flex justify-center">
           <BrandLogo compact />
         </div>
-        <h2 className="text-2xl font-extrabold tracking-tight text-white mb-2">
+        <h2 className="text-2xl font-extrabold tracking-tight mb-2">
           Welcome back
         </h2>
-        <p className="text-xs font-medium uppercase tracking-widest text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-widest text-[var(--color-text-tertiary)]">
           Sign in to your dashboard
         </p>
       </div>
@@ -80,7 +89,11 @@ export default function Login() {
           onClick={() => {
             window.location.href = getOAuthUrl('google');
           }}
-          className="flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
+          className={`flex items-center justify-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] ${
+            isDark
+              ? 'border-white/[0.08] bg-white/[0.02] text-slate-300 hover:bg-white/[0.06] hover:text-white'
+              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24">
             <path
@@ -108,19 +121,25 @@ export default function Login() {
           onClick={() => {
             window.location.href = getOAuthUrl('github');
           }}
-          className="flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white active:scale-[0.98]"
+          className={`flex items-center justify-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] ${
+            isDark
+              ? 'border-white/[0.08] bg-white/[0.02] text-slate-300 hover:bg-white/[0.06] hover:text-white'
+              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
         >
-          <Github className="h-4 w-4 text-slate-300" />
+          <Github className={`h-4 w-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`} />
           GitHub
         </button>
       </div>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/[0.08]"></span>
+          <span className="w-full border-t" style={{ borderColor: 'var(--color-border-primary)' }}></span>
         </div>
         <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-widest">
-          <span className="bg-[#0c121e] px-4 text-slate-500">
+          <span className="px-4 text-[var(--color-text-tertiary)]"
+            style={{ background: isDark ? '#0c121e' : 'rgba(255,255,255,0.85)' }}
+          >
             Or continue with email
           </span>
         </div>
@@ -128,7 +147,7 @@ export default function Login() {
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-400 shadow-sm animate-in slide-in-from-top-1">
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-500 dark:text-rose-400 shadow-sm animate-in slide-in-from-top-1">
             <div className="flex items-start gap-3">
               <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
               <div className="space-y-3">
@@ -138,7 +157,7 @@ export default function Login() {
                     type="button"
                     onClick={handleResendVerification}
                     disabled={isResending}
-                    className="inline-flex items-center rounded-lg bg-white/[0.05] px-3 py-2 text-xs font-semibold text-rose-300 ring-1 ring-white/10 transition hover:bg-white/[0.1] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center rounded-lg px-3 py-2 text-xs font-semibold text-rose-500 dark:text-rose-300 ring-1 ring-rose-500/20 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isResending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
                     Resend verification
@@ -150,13 +169,13 @@ export default function Login() {
         ) : null}
 
         {resendMessage ? (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-400 shadow-sm">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-600 dark:text-emerald-400 shadow-sm">
             {resendMessage}
           </div>
         ) : null}
 
         <div className="space-y-1.5">
-          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <label className="ml-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
             Email Address
           </label>
           <input
@@ -164,14 +183,14 @@ export default function Login() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
+            className={inputClassName}
             placeholder="you@company.com"
           />
         </div>
 
         <div className="space-y-1.5">
           <div className="ml-1 flex items-center justify-between">
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-tertiary)]">
               Password
             </label>
             <Link
@@ -187,13 +206,13 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-white/[0.1] bg-[#080c14]/50 px-4 py-3 pr-12 text-sm text-white placeholder-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-colors"
+              className={`${inputClassName} pr-12`}
               placeholder="********"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 hover:text-slate-300 transition-colors"
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -209,9 +228,9 @@ export default function Login() {
         </button>
 
         <div className="pt-4 text-center">
-          <p className="text-[11px] font-medium text-slate-500">
+          <p className="text-[11px] font-medium text-[var(--color-text-tertiary)]">
             New to Zer0Friction?{' '}
-            <Link to="/register" className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
+            <Link to="/register" className="font-bold text-emerald-500 hover:text-emerald-400 transition-colors">
               Create an account
             </Link>
           </p>

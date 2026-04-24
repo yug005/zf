@@ -18,23 +18,23 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NotificationBell } from '../components/NotificationBell';
+import { ModeToggle } from '../components/ModeToggle';
 import { AUTH_HINT_STORAGE_KEY, currentUserQueryOptions } from '../services/current-user';
 import { QuickStartCard } from '../components/QuickStartCard';
 import { logoutSession } from '../services/api';
 import { PageMeta } from '../components/PageMeta';
 import { BrandLogo } from '../components/BrandLogo';
+import { useTheme } from '../components/ThemeProvider';
 
 function classNames(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const shellSurface =
-  'border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] backdrop-blur-2xl shadow-[0_24px_90px_rgba(0,0,0,0.38)]';
-
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { resolvedTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const {
@@ -112,49 +112,61 @@ export default function DashboardLayout() {
         ? 'Security Report'
         : pageTitles[location.pathname] || 'Dashboard';
 
+  const isDark = resolvedTheme === 'dark';
+
   if (!currentUser) {
     if (isUserLoading || isUserFetching) {
       return (
-        <div className="relative min-h-screen overflow-hidden bg-[#040611] font-sans text-slate-100">
+        <div className="relative min-h-screen overflow-hidden font-sans bg-[var(--color-surface-base)] text-[var(--color-text-primary)]">
           <div className="pointer-events-none fixed inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,#050816_0%,#040611_100%)]" />
-            <div className="absolute left-[-12rem] top-[5rem] h-[28rem] w-[28rem] rounded-full bg-cyan-500/12 blur-[180px]" />
-            <div className="absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-emerald-500/10 blur-[160px]" />
+            <div className="absolute inset-0" style={{
+              background: isDark
+                ? 'radial-gradient(circle at top, rgba(34,211,238,0.12), transparent 30%), radial-gradient(circle at 80% 18%, rgba(16,185,129,0.12), transparent 26%), linear-gradient(180deg, #050816, #040611)'
+                : 'radial-gradient(circle at top, rgba(34,211,238,0.06), transparent 30%), radial-gradient(circle at 80% 18%, rgba(16,185,129,0.06), transparent 26%), linear-gradient(180deg, #f8fafc, #f1f5f9)',
+            }} />
+            <div className={classNames(
+              'absolute left-[-12rem] top-[5rem] h-[28rem] w-[28rem] rounded-full blur-[180px]',
+              isDark ? 'bg-cyan-500/12' : 'bg-cyan-500/6',
+            )} />
+            <div className={classNames(
+              'absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full blur-[160px]',
+              isDark ? 'bg-emerald-500/10' : 'bg-emerald-500/5',
+            )} />
           </div>
 
           <div className="relative z-10 flex min-h-screen gap-6 px-3 py-3 sm:px-4 sm:py-4 lg:gap-8 lg:px-5 lg:py-5">
-            <aside className={classNames(shellSurface, 'hidden w-[19rem] flex-col rounded-[30px] lg:flex')}>
-              <div className="border-b border-white/6 px-6 py-6">
-                <BrandLogo theme="dark" />
+            <aside className="shell-surface hidden w-[19rem] flex-col rounded-[30px] lg:flex">
+              <div className="border-b px-6 py-6" style={{ borderColor: 'var(--color-border-secondary)' }}>
+                <BrandLogo theme={isDark ? 'dark' : 'light'} />
               </div>
               <div className="px-6 pt-5">
-                <div className="rounded-[26px] border border-white/8 bg-white/[0.03] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300/70">
+                <div className="rounded-[26px] border p-4" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-600 dark:text-cyan-300/70">
                     Production Space
                   </p>
-                  <div className="mt-3 h-4 w-32 animate-pulse rounded bg-white/10" />
-                  <div className="mt-2 h-3 w-20 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-4 w-32 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
+                  <div className="mt-2 h-3 w-20 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
                 </div>
               </div>
               <nav className="flex-1 space-y-2 px-4 py-6">
                 {Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="rounded-[22px] border border-white/6 bg-white/[0.03] px-4 py-3.5">
-                    <div className="h-4 w-28 animate-pulse rounded bg-white/10" />
+                  <div key={index} className="rounded-[22px] border px-4 py-3.5" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }}>
+                    <div className="h-4 w-28 animate-pulse rounded bg-slate-200 dark:bg-white/10" />
                   </div>
                 ))}
               </nav>
             </aside>
 
             <main className="flex min-w-0 flex-1 flex-col">
-              <header className={classNames(shellSurface, 'sticky top-3 z-20 mb-6 flex min-h-[88px] items-center rounded-[30px] px-4 sm:px-5 lg:px-6')}>
+              <header className="shell-surface sticky top-3 z-20 mb-6 flex min-h-[88px] items-center rounded-[30px] px-4 sm:px-5 lg:px-6">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-300/70">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-600 dark:text-cyan-300/70">
                     Zer0Friction Command Layer
                   </p>
-                  <h1 className="mt-1 truncate text-xl font-semibold text-white sm:text-2xl">{activeTitle}</h1>
+                  <h1 className="mt-1 truncate text-xl font-semibold sm:text-2xl">{activeTitle}</h1>
                 </div>
                 <div className="ml-auto flex items-center gap-3">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" />
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-500" />
                 </div>
               </header>
               <div className="flex-1">
@@ -167,66 +179,84 @@ export default function DashboardLayout() {
     }
 
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#040611] text-white">
-        <p className="text-sm text-slate-400">Redirecting to sign in...</p>
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--color-surface-base)]">
+        <p className="text-sm text-[var(--color-text-tertiary)]">Redirecting to sign in...</p>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#040611] font-sans text-slate-100">
+    <div className="relative min-h-screen overflow-hidden font-sans bg-[var(--color-surface-base)] text-[var(--color-text-primary)]">
       <PageMeta
         title={`${activeTitle} | Zer0Friction`}
         description="Manage monitors, incidents, deploy changes, alerts, and status pages inside Zer0Friction."
         noIndex
       />
 
+      {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_80%_18%,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,#050816_0%,#040611_100%)]" />
-        <div className="absolute left-[-12rem] top-[5rem] h-[28rem] w-[28rem] rounded-full bg-cyan-500/12 blur-[180px]" />
-        <div className="absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-emerald-500/10 blur-[160px]" />
+        <div className="absolute inset-0" style={{
+          background: isDark
+            ? 'radial-gradient(circle at top, rgba(34,211,238,0.12), transparent 30%), radial-gradient(circle at 80% 18%, rgba(16,185,129,0.12), transparent 26%), linear-gradient(180deg, #050816, #040611)'
+            : 'radial-gradient(circle at top, rgba(34,211,238,0.04), transparent 30%), radial-gradient(circle at 80% 18%, rgba(16,185,129,0.04), transparent 26%), linear-gradient(180deg, #f8fafc, #f1f5f9)',
+        }} />
+        <div className={classNames(
+          'absolute left-[-12rem] top-[5rem] h-[28rem] w-[28rem] rounded-full blur-[180px]',
+          isDark ? 'bg-cyan-500/12' : 'bg-cyan-400/[0.06]',
+        )} />
+        <div className={classNames(
+          'absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full blur-[160px]',
+          isDark ? 'bg-emerald-500/10' : 'bg-emerald-400/[0.05]',
+        )} />
       </div>
 
+      {/* Mobile overlay */}
       {mobileMenuOpen ? (
         <button
           type="button"
           aria-label="Close navigation"
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-md lg:hidden"
+          className={classNames(
+            'fixed inset-0 z-30 backdrop-blur-md lg:hidden',
+            isDark ? 'bg-slate-950/70' : 'bg-slate-900/30',
+          )}
         />
       ) : null}
 
       <div className="relative z-10 flex min-h-screen gap-6 px-3 py-3 sm:px-4 sm:py-4 lg:gap-8 lg:px-5 lg:py-5">
+        {/* Sidebar */}
         <aside
           className={classNames(
-            shellSurface,
-            'fixed inset-y-3 left-3 z-40 flex w-[19rem] flex-col rounded-[30px] transition-transform duration-300 lg:static lg:translate-x-0',
+            'shell-surface fixed inset-y-3 left-3 z-40 flex w-[19rem] flex-col rounded-[30px] transition-transform duration-300 lg:static lg:translate-x-0',
             mobileMenuOpen ? 'translate-x-0' : '-translate-x-[120%]',
           )}
         >
-          <div className="flex items-center justify-between border-b border-white/6 px-6 py-6">
-            <BrandLogo theme="dark" />
+          <div className="flex items-center justify-between border-b px-6 py-6" style={{ borderColor: 'var(--color-border-secondary)' }}>
+            <BrandLogo theme={isDark ? 'dark' : 'light'} />
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/6 bg-white/[0.03] text-slate-400 transition hover:bg-white/[0.06] hover:text-white lg:hidden"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border text-[var(--color-text-tertiary)] transition hover:text-[var(--color-text-primary)] lg:hidden"
+              style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }}
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
+          {/* User badge */}
           <div className="px-6 pt-5">
-            <div className="rounded-[26px] border border-white/8 bg-white/[0.03] p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-300/70">
+            <div className="rounded-[26px] border p-4" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-600 dark:text-cyan-300/70">
                 Production Space
               </p>
-              <p className="mt-3 text-sm font-semibold text-white">{currentUser.name || currentUser.email}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
+              <p className="mt-3 text-sm font-semibold">{currentUser.name || currentUser.email}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
                 {currentUser.isAdmin ? 'Root access' : 'Operator seat'}
               </p>
             </div>
           </div>
 
+          {/* Navigation */}
           <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6">
             {menu.map((item) => {
               const Icon = item.icon;
@@ -237,14 +267,20 @@ export default function DashboardLayout() {
                       className={classNames(
                         'group relative flex items-center gap-3 rounded-[22px] px-4 py-3.5 transition-all duration-300',
                         isActive
-                          ? 'text-white'
-                          : 'text-slate-400 hover:bg-white/[0.03] hover:text-slate-100',
+                          ? ''
+                          : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]',
                       )}
+                      style={!isActive ? { background: 'transparent' } : undefined}
                     >
                       {isActive ? (
                         <motion.div
                           layoutId="dashboard-nav"
-                          className="absolute inset-0 rounded-[22px] border border-cyan-400/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(16,185,129,0.1))] shadow-[0_10px_35px_rgba(6,182,212,0.16)]"
+                          className={classNames(
+                            'absolute inset-0 rounded-[22px] border',
+                            isDark
+                              ? 'border-cyan-400/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(16,185,129,0.1))] shadow-[0_10px_35px_rgba(6,182,212,0.16)]'
+                              : 'border-cyan-400/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.1),rgba(16,185,129,0.06))] shadow-[0_4px_16px_rgba(6,182,212,0.08)]',
+                          )}
                           transition={{ type: 'spring', bounce: 0.18, duration: 0.6 }}
                         />
                       ) : null}
@@ -252,15 +288,22 @@ export default function DashboardLayout() {
                         className={classNames(
                           'relative z-10 flex h-10 w-10 items-center justify-center rounded-2xl border transition',
                           isActive
-                            ? 'border-white/10 bg-slate-950/40 text-cyan-200'
-                            : 'border-white/6 bg-white/[0.03] text-slate-500 group-hover:text-slate-200',
+                            ? isDark
+                              ? 'border-white/10 bg-slate-950/40 text-cyan-200'
+                              : 'border-cyan-200/40 bg-white/80 text-cyan-600'
+                            : isDark
+                              ? 'border-white/6 bg-white/[0.03] text-slate-500 group-hover:text-slate-200'
+                              : 'border-slate-200/60 bg-slate-50 text-slate-400 group-hover:text-slate-700',
                         )}
                       >
                         <Icon className="h-4.5 w-4.5" />
                       </div>
                       <div className="relative z-10 min-w-0">
-                        <p className="truncate text-sm font-semibold">{item.title}</p>
-                        <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                        <p className={classNames(
+                          'truncate text-sm font-semibold',
+                          isActive ? '' : '',
+                        )}>{item.title}</p>
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-tertiary)]">
                           {item.path === '/dashboard'
                             ? 'Overview'
                             : item.path === '/monitors'
@@ -287,16 +330,18 @@ export default function DashboardLayout() {
             })}
           </nav>
 
+          {/* Quick start card */}
           <div className="px-5 pb-4">
-            <div className="rounded-[26px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-3">
+            <div className="rounded-[26px] border p-3" style={{ borderColor: 'var(--color-border-secondary)', background: 'var(--color-surface-glass)' }}>
               <QuickStartCard type="general" />
             </div>
           </div>
 
+          {/* Logout */}
           <div className="px-5 pb-5">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-rose-500/20 bg-rose-500/8 px-4 py-3.5 text-sm font-semibold text-rose-300 transition hover:bg-rose-500/14 hover:text-white"
+              className="flex w-full items-center justify-center gap-3 rounded-[22px] border border-rose-500/20 bg-rose-500/8 px-4 py-3.5 text-sm font-semibold text-rose-500 dark:text-rose-300 transition hover:bg-rose-500/14"
             >
               <LogOut className="h-4 w-4" />
               Sign Out Session
@@ -304,48 +349,59 @@ export default function DashboardLayout() {
           </div>
         </aside>
 
+        {/* Main content */}
         <main className="flex min-w-0 flex-1 flex-col lg:pl-0">
-          <header
-            className={classNames(
-              shellSurface,
-              'sticky top-3 z-20 mb-6 flex min-h-[88px] items-center rounded-[30px] px-4 sm:px-5 lg:px-6',
-            )}
-          >
+          <header className="shell-surface sticky top-3 z-20 mb-6 flex min-h-[88px] items-center rounded-[30px] px-4 sm:px-5 lg:px-6">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.04] text-slate-300 transition hover:bg-white/[0.07] hover:text-white lg:hidden"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border text-[var(--color-text-secondary)] transition hover:text-[var(--color-text-primary)] lg:hidden"
+              style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}
               aria-label="Open navigation"
             >
               <Menu className="h-5 w-5" />
             </button>
 
             <div className="ml-3 min-w-0 lg:ml-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-300/70">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-600 dark:text-cyan-300/70">
                 Zer0Friction Command Layer
               </p>
-              <h1 className="mt-1 truncate text-xl font-semibold text-white sm:text-2xl">{activeTitle}</h1>
+              <h1 className="mt-1 truncate text-xl font-semibold sm:text-2xl">{activeTitle}</h1>
             </div>
 
             <div className="ml-auto flex items-center gap-3">
-              <div className="hidden rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3 lg:flex lg:items-center lg:gap-4">
+              {/* Theme Toggle */}
+              <div className="hidden lg:block">
+                <ModeToggle />
+              </div>
+
+              {/* Status indicator */}
+              <div className="hidden rounded-[22px] border px-4 py-3 lg:flex lg:items-center lg:gap-4"
+                style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}
+              >
                 <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]" />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--color-text-tertiary)]">
                     Monitoring fabric
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-100">Live and polling</p>
+                  <p className="mt-1 text-sm font-semibold">Live and polling</p>
                 </div>
               </div>
 
-              <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-1.5">
+              {/* Notifications */}
+              <div className="rounded-[22px] border p-1.5"
+                style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}
+              >
                 <NotificationBell />
               </div>
 
-              <div className="hidden items-center gap-3 rounded-[22px] border border-white/8 bg-white/[0.03] px-3 py-2 lg:flex">
+              {/* User badge */}
+              <div className="hidden items-center gap-3 rounded-[22px] border px-3 py-2 lg:flex"
+                style={{ borderColor: 'var(--color-border-primary)', background: 'var(--color-surface-glass)' }}
+              >
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-white">{currentUser.name || 'User'}</p>
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">
+                  <p className="text-sm font-semibold">{currentUser.name || 'User'}</p>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-tertiary)]">
                     {currentUser.isAdmin ? 'Admin operator' : 'Workspace member'}
                   </p>
                 </div>
